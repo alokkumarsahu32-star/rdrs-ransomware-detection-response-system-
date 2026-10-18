@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Quarantine | RDRS</title>
+
+<link
+    rel="stylesheet"
+    href="/static/css/dashboard.css"
+>
+
+<style>
+    /* ==================================================
+   RDRS CYBER SHIELD LOGO
+================================================== */
+
+.dashboard-shield-logo {
+    width: 42px;
+    height: 48px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dashboard-shield-logo::before {
+    content: "";
+    position: absolute;
+    width: 32px;
+    height: 38px;
+    border: 2px solid #38bdf8;
+    background: rgba(37, 99, 235, 0.12);
+
+    clip-path: polygon(
+        50% 0%,
+        92% 16%,
+        88% 62%,
+        70% 86%,
+        50% 100%,
+        30% 86%,
+        12% 62%,
+        8% 16%
+    );
+
+    box-shadow:
+        0 0 12px rgba(56, 189, 248, 0.35),
+        inset 0 0 12px rgba(37, 99, 235, 0.15);
+}
+
+.dashboard-shield-logo .shield-core {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #38bdf8;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #38bdf8;
+    z-index: 2;
+}
+
+.dashboard-shield-logo .shield-line {
+    position: absolute;
+    height: 2px;
+    background: #38bdf8;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+    z-index: 2;
+}
+
+.dashboard-shield-logo .line-1 {
+    width: 20px;
+    transform: rotate(90deg);
+}
+
+.dashboard-shield-logo .line-2 {
+    width: 15px;
+    transform: rotate(45deg);
+}
+
+.dashboard-shield-logo .line-3 {
+    width: 15px;
+    transform: rotate(-45deg);
+}
+
+    /* ==============================
+       QUARANTINE STAT
+    ============================== */
+
+    .quarantine-stat {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 15px;
+
+        margin-bottom: 25px;
+
+        background: #111827;
+
+        border: 1px solid rgba(255,255,255,0.06);
+
+        border-radius: 14px;
+
+        padding: 20px;
+    }
+
+
+    .quarantine-stat-icon {
+
+        width: 48px;
+
+        height: 48px;
+
+        border-radius: 12px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        background: rgba(37,99,235,0.15);
+
+        color: #60a5fa;
+
+        font-size: 22px;
+    }
+
+
+    .quarantine-stat span {
+
+        display: block;
+
+        color: #94a3b8;
+
+        font-size: 13px;
+    }
+
+
+    .quarantine-stat h2 {
+
+        margin-top: 5px;
+
+        color: #f8fafc;
+
+        font-size: 27px;
+    }
+
+
+    /* ==============================
+       PAGE CARD
+    ============================== */
+
+    .page-card {
+
+        background: #111827;
+
+        border: 1px solid rgba(255,255,255,0.06);
+
+        border-radius: 14px;
+
+        padding: 24px;
+
+        box-shadow:
+            0 8px 30px rgba(0,0,0,0.18);
+    }
+
+
+    .quarantine-header {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        align-items: center;
+
+        margin-bottom: 20px;
+    }
+
+
+    .quarantine-header h2 {
+
+        color: #f8fafc;
+
+        font-size: 19px;
+    }
+
+
+    .quarantine-header p {
+
+        margin-top: 5px;
+
+        color: #94a3b8;
+
+        font-size: 12px;
+    }
+
+
+    /* ==============================
+       TABLE
+    ============================== */
+
+    .table-container {
+
+        width: 100%;
+
+        overflow-x: auto;
+    }
+
+
+    .quarantine-table {
+
+        width: 100%;
+
+        border-collapse: collapse;
+
+        min-width: 1050px;
+    }
+
+
+    .quarantine-table th {
+
+        text-align: left;
+
+        padding: 14px 16px;
+
+        font-size: 12px;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.5px;
+
+        color: #94a3b8;
+
+        background: #0f172a;
+
+        border-bottom:
+            1px solid rgba(255,255,255,0.08);
+    }
+
+
+    .quarantine-table td {
+
+        padding: 15px 16px;
+
+        font-size: 13px;
+
+        color: #cbd5e1;
+
+        border-bottom:
+            1px solid rgba(255,255,255,0.05);
+
+        vertical-align: top;
+    }
+
+
+    .quarantine-table tr:hover {
+
+        background:
+            rgba(255,255,255,0.025);
+    }
+
+
+    /* ==============================
+       FILE NAME
+    ============================== */
+
+    .file-name {
+
+        color: #f8fafc;
+
+        font-weight: 600;
+
+        max-width: 200px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+    }
+
+
+    /* ==============================
+       PATH
+    ============================== */
+
+    .path {
+
+        max-width: 280px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+
+        color: #94a3b8;
+    }
+
+
+    /* ==============================
+       REASON
+    ============================== */
+
+    .reason {
+
+        max-width: 260px;
+
+        color: #cbd5e1;
+
+        line-height: 1.5;
+    }
+
+
+    /* ==============================
+       STATUS
+    ============================== */
+
+    .status {
+
+        display: inline-block;
+
+        padding: 5px 10px;
+
+        border-radius: 20px;
+
+        font-size: 11px;
+
+        font-weight: 700;
+    }
+
+
+    .success {
+
+        color: #4ade80;
+
+        background:
+            rgba(74,222,128,0.12);
+    }
+
+
+    .failed {
+
+        color: #f87171;
+
+        background:
+            rgba(248,113,113,0.12);
+    }
+
+
+    .unknown {
+
+        color: #facc15;
+
+        background:
+            rgba(250,204,21,0.12);
+    }
+
+
+    /* ==============================
+       EMPTY
+    ============================== */
+
+    .empty {
+
+        text-align: center;
+
+        padding: 55px 20px;
+
+        color: #94a3b8;
+    }
+
+
+    .empty-icon {
+
+        font-size: 35px;
+
+        margin-bottom: 10px;
+    }
+
+
+    .empty h3 {
+
+        color: #e2e8f0;
+
+        margin-bottom: 6px;
+    }
+
+
+    /* ==============================
+       MOBILE
+    ============================== */
+
+    @media (max-width: 768px) {
+
+        .quarantine-header {
+
+            flex-direction: column;
+
+            align-items: flex-start;
+
+            gap: 15px;
+        }
+
+    }
+
+</style>
+```
+
+</head>
+
+<body>
+
+<div class="dashboard-layout">
+
+```
+<!-- ==============================
+     SIDEBAR
+============================== -->
+
+<aside class="sidebar">
+
+
+    <!-- LOGO -->
+
+    <div class="logo-area">
+
+        <div class="dashboard-shield-logo">
+    <span class="shield-core"></span>
+    <span class="shield-line line-1"></span>
+    <span class="shield-line line-2"></span>
+    <span class="shield-line line-3"></span>
+</div>
+
+        <div>
+
+            <h2>
+                RDRS
+            </h2>
+
+            <span>
+                Security Center
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- NAVIGATION -->
+
+    <nav class="sidebar-nav">
+
+
+        <a
+            href="/dashboard"
+            class="nav-item"
+        >
+
+            <span>
+                ▣
+            </span>
+
+            Dashboard
+
+        </a>
+
+
+        <a
+            href="/events"
+            class="nav-item"
+        >
+
+            <span>
+                ◉
+            </span>
+
+            Security Events
+
+        </a>
+
+
+        <a
+            href="/threats"
+            class="nav-item"
+        >
+
+            <span>
+                ⚠
+            </span>
+
+            Threats
+
+        </a>
+
+
+        <a
+            href="/quarantine"
+            class="nav-item active"
+        >
+
+            <span>
+                ▣
+            </span>
+
+            Quarantine
+
+        </a>
+
+
+        <a
+            href="/monitoring"
+            class="nav-item"
+        >
+
+            <span>
+                ◌
+            </span>
+
+            Monitoring
+
+        </a>
+
+
+        <a
+            href="/system-status"
+            class="nav-item"
+        >
+
+            <span>
+                ●
+            </span>
+
+            System Status
+
+        </a>
+
+
+    </nav>
+
+
+    <!-- SIDEBAR BOTTOM -->
+
+    <div class="sidebar-bottom">
+
+
+        <div class="system-status">
+
+            <span class="status-dot"></span>
+
+            <div>
+
+                <strong>
+                    System Online
+                </strong>
+
+                <small>
+                    Monitoring active
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <a
+            href="/logout"
+            class="logout-button"
+        >
+
+            <span>
+                ↪
+            </span>
+
+            Logout
+
+        </a>
+
+
+    </div>
+
+
+</aside>
+
+
+<!-- ==============================
+     MAIN CONTENT
+============================== -->
+
+<main class="main-content">
+
+
+    <!-- TOPBAR -->
+
+    <header class="topbar">
+
+
+        <div>
+
+            <h1>
+                Quarantine Management
+            </h1>
+
+            <p>
+                Manage and review isolated suspicious files.
+            </p>
+
+        </div>
+
+
+        <!-- USER -->
+
+        <div class="user-area">
+
+
+            <div class="user-info">
+
+                <strong>
+                    {{ username }}
+                </strong>
+
+                <span>
+                    Security Administrator
+                </span>
+
+            </div>
+
+
+            <div class="user-avatar">
+
+                {{ username[0]|upper }}
+
+            </div>
+
+
+        </div>
+
+
+    </header>
+
+
+    <!-- ==============================
+         STAT
+    ============================== -->
+
+    <section class="quarantine-stat">
+
+
+        <div class="quarantine-stat-icon">
+
+            ▣
+
+        </div>
+
+
+        <div>
+
+            <span>
+                Total Quarantined Files
+            </span>
+
+            <h2>
+                {{ quarantine_count }}
+            </h2>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- ==============================
+         QUARANTINE RECORDS
+    ============================== -->
+
+    <section class="page-card">
+
+
+        <div class="quarantine-header">
+
+
+            <div>
+
+                <h2>
+                    Quarantine Records
+                </h2>
+
+                <p>
+                    Files isolated by the RDRS response module.
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+        {% if quarantines %}
+
+
+        <div class="table-container">
+
+
+            <table class="quarantine-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            Original File
+                        </th>
+
+                        <th>
+                            Original Path
+                        </th>
+
+                        <th>
+                            Quarantine Path
+                        </th>
+
+                        <th>
+                            Reason
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Timestamp
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                {% for item in quarantines %}
+
+
+                <tr>
+
+
+                    <!-- ID -->
+
+                    <td>
+
+                        #{{ item.id }}
+
+                    </td>
+
+
+                    <!-- FILE -->
+
+                    <td>
+
+                        <div
+                            class="file-name"
+                            title="{{ item.file_path }}"
+                        >
+
+                            {{ item.file_path.split('\\')[-1] }}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- ORIGINAL PATH -->
+
+                    <td>
+
+                        <div
+                            class="path"
+                            title="{{ item.file_path }}"
+                        >
+
+                            {{ item.file_path }}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- QUARANTINE PATH -->
+
+                    <td>
+
+                        <div
+                            class="path"
+                            title="{{ item.quarantine_path }}"
+                        >
+
+                            {{ item.quarantine_path }}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- REASON -->
+
+                    <td>
+
+                        <div class="reason">
+
+                            {{ item.reason }}
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- STATUS -->
+
+                    <td>
+
+
+                        {% if item.status == "SUCCESS" %}
+
+
+                            <span class="status success">
+
+                                SUCCESS
+
+                            </span>
+
+
+                        {% elif item.status == "FAILED" %}
+
+
+                            <span class="status failed">
+
+                                FAILED
+
+                            </span>
+
+
+                        {% else %}
+
+
+                            <span class="status unknown">
+
+                                {{ item.status }}
+
+                            </span>
+
+
+                        {% endif %}
+
+
+                    </td>
+
+
+                    <!-- TIMESTAMP -->
+
+                    <td>
+
+                        {{ item.timestamp }}
+
+                    </td>
+
+
+                </tr>
+
+
+                {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+        {% else %}
+
+
+        <div class="empty">
+
+
+            <div class="empty-icon">
+                ✓
+            </div>
+
+
+            <h3>
+                No Quarantine Records
+            </h3>
+
+
+            <p>
+                Files isolated by the response module will appear here.
+            </p>
+
+
+        </div>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+    <!-- FOOTER -->
+
+    <footer>
+
+        <span>
+            RDRS v1.0
+        </span>
+
+        <span>
+            Ransomware Detection &amp; Response System
+        </span>
+
+    </footer>
+
+
+</main>
+
+</div>
+
+</body>
+
+</html>

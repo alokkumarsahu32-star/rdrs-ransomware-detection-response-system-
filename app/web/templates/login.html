@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>RDRS | Secure Login</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/css/login.css"
+    >
+
+</head>
+
+
+<body>
+
+    <main class="login-page">
+
+        <!-- =================================
+             LEFT BRANDING SECTION
+        ================================== -->
+
+        <section class="brand-section">
+
+            <div class="brand-content">
+
+                <!-- RDRS CYBER LOGO -->
+
+                <div class="brand-logo">
+
+                    <div class="shield-logo">
+
+                        <span class="shield-core"></span>
+
+                        <span class="shield-line line-1"></span>
+
+                        <span class="shield-line line-2"></span>
+
+                        <span class="shield-line line-3"></span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Brand Name -->
+
+                <h1>
+                    RDRS
+                </h1>
+
+
+                <!-- Brand Description -->
+
+                <h2>
+                    Ransomware Detection
+                    <br>
+                    &amp; Response System
+                </h2>
+
+
+                <p>
+                    Monitor. Detect. Respond.
+                    <br>
+                    Protect your digital environment
+                    from ransomware threats.
+                </p>
+
+
+                <!-- Security Status -->
+
+                <div class="security-status">
+
+                    <span class="status-dot"></span>
+
+                    <span>
+                        Security System Ready
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             LOGIN SECTION
+        ================================== -->
+
+        <section class="login-section">
+
+            <div class="login-card">
+
+
+                <!-- Mobile Logo -->
+
+                <div class="mobile-logo">
+
+                    <div class="shield-logo">
+
+                        <span class="shield-core"></span>
+
+                        <span class="shield-line line-1"></span>
+
+                        <span class="shield-line line-2"></span>
+
+                        <span class="shield-line line-3"></span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Login Header -->
+
+                <div class="login-header">
+
+                    <h2>
+                        Welcome Back
+                    </h2>
+
+                    <p>
+                        Sign in to access your
+                        security dashboard.
+                    </p>
+
+                </div>
+
+
+                <!-- =================================
+                     ERROR MESSAGE
+                ================================== -->
+
+                {% if error %}
+
+                <div class="error-message">
+
+                    <span>
+                        ⚠
+                    </span>
+
+                    <span>
+                        {{ error }}
+                    </span>
+
+                </div>
+
+                {% endif %}
+                
+{% if register_success %}
+<div class="success-message" role="status">
+    <span>✓</span>
+    <span>{{ register_success }}</span>
+</div>
+{% endif %}
+
+
+                <!-- =================================
+                     LOGIN FORM
+                ================================== -->
+
+                <form
+                    method="POST"
+                    action="/login"
+                    class="login-form"
+                >
+
+
+                    <!-- Username -->
+
+                    <div class="input-group">
+
+                        <label for="username">
+                            Username
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                👤
+                            </span>
+
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Password -->
+
+                    <div class="input-group">
+
+                        <label for="password">
+                            Password
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <span class="input-icon">
+                                🔒
+                            </span>
+
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword()"
+                                aria-label="Show password"
+                            >
+                                👁
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Login Button -->
+
+                    <button
+                        type="submit"
+                        class="login-button"
+                    >
+
+                        <span>
+                            Sign In
+                        </span>
+
+                        <span class="arrow">
+                            →
+                        </span>
+
+                    </button>
+
+                </form>
+
+                
+<p class="register-link">
+    Don't have an account?
+    <a href="/register">Create Account</a>
+</p>
+
+
+                <!-- =================================
+                     DIVIDER
+                ================================== -->
+
+                <div class="divider">
+
+                    <span></span>
+
+                    <p>
+                        OR
+                    </p>
+
+                    <span></span>
+
+                </div>
+
+
+                <!-- =================================
+                     GOOGLE LOGIN
+                ================================== -->
+
+                <button
+                    type="button"
+                    class="google-button"
+                >
+
+                    <span class="google-icon">
+                        G
+                    </span>
+
+                    <span>
+                        Continue with Google
+                    </span>
+
+                </button>
+
+
+                <!-- =================================
+                     SECURITY INFORMATION
+                ================================== -->
+
+                <div class="secure-info">
+
+                    <span>
+                        🔐
+                    </span>
+
+                    <p>
+                        Your connection is protected
+                        by secure authentication.
+                    </p>
+
+                </div>
+
+
+                <!-- Copyright -->
+
+                <p class="copyright">
+                    © 2026 RDRS. Secure Access Portal.
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================
+         PASSWORD SHOW / HIDE
+    ================================== -->
+
+    <script>
+
+        function togglePassword() {
+
+            const password =
+                document.getElementById("password");
+
+            const button =
+                document.querySelector(".password-toggle");
+
+
+            if (password.type === "password") {
+
+                password.type = "text";
+
+                button.textContent = "🙈";
+
+                button.setAttribute(
+                    "aria-label",
+                    "Hide password"
+                );
+
+            } else {
+
+                password.type = "password";
+
+                button.textContent = "👁";
+
+                button.setAttribute(
+                    "aria-label",
+                    "Show password"
+                );
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | RDRS</title>
+    <link rel="stylesheet" href="/static/css/login.css">
+</head>
+
+<body>
+    <main class="login-page">
+
+        <!-- LEFT BRAND SECTION -->
+        <section class="brand-section">
+            <div class="brand-content">
+
+                <div class="brand-logo">
+                    <div class="shield-logo">
+                        <span class="shield-core"></span>
+                        <span class="shield-line line-1"></span>
+                        <span class="shield-line line-2"></span>
+                        <span class="shield-line line-3"></span>
+                    </div>
+                </div>
+
+                <h1>RDRS</h1>
+                <h2>Ransomware Detection<br>And Response System</h2>
+
+                <p>
+                    Create your account to access your RDRS security
+                    dashboard and manage your registered devices.
+                </p>
+
+                <div class="security-status">
+                    <span class="status-dot"></span>
+                    <span>Security-focused account access</span>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- REGISTRATION SECTION -->
+        <section class="login-section">
+            <div class="login-card">
+
+                <div class="mobile-logo">
+                    <div class="shield-logo">
+                        <span class="shield-core"></span>
+                        <span class="shield-line line-1"></span>
+                        <span class="shield-line line-2"></span>
+                        <span class="shield-line line-3"></span>
+                    </div>
+                </div>
+
+                <header class="login-header">
+                    <h2>Create Account</h2>
+                    <p>Register to get started with RDRS.</p>
+                </header>
+
+                {% if error %}
+                <div class="error-message" role="alert">
+                    <span>⚠</span>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
+                <form action="/register" method="POST">
+
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                placeholder="Choose a username"
+                                minlength="1"
+                                maxlength="50"
+                                autocomplete="username"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">✉</span>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="Enter your email"
+                                maxlength="254"
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔒</span>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Create a strong password"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                data-toggle="password"
+                                aria-label="Show password"
+                            >Show</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔐</span>
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                placeholder="Enter password again"
+                                minlength="8"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                data-toggle="confirm_password"
+                                aria-label="Show confirm password"
+                            >Show</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        <span>Create Account</span>
+                        <span class="arrow">→</span>
+                    </button>
+
+                </form>
+
+                <p class="register-link">
+                    Already have an account?
+                    <a href="/">Sign In</a>
+                </p>
+
+                <div class="secure-info">
+                    <span>🔐</span>
+                    <p>Your password is stored as a secure hash.</p>
+                </div>
+
+                <div class="copyright">
+                    © 2026 RDRS. All rights reserved.
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.querySelectorAll("[data-toggle]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const input = document.getElementById(
+                    button.getAttribute("data-toggle")
+                );
+
+                const showPassword = input.type === "password";
+                input.type = showPassword ? "text" : "password";
+                button.textContent = showPassword ? "Hide" : "Show";
+                button.setAttribute(
+                    "aria-label",
+                    showPassword ? "Hide password" : "Show password"
+                );
+            });
+        });
+    </script>
+</body>
+</html>

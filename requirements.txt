@@ -1,0 +1,12 @@
+
+fastapi
+uvicorn
+SQLAlchemy
+Jinja2
+python-multipart
+itsdangerous
+watchdog
+psutil
+pydantic
+requests
+bcrypt

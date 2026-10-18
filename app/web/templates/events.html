@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Security Events | RDRS</title>
+
+    <link rel="stylesheet"
+          href="/static/css/dashboard.css">
+
+    <style>
+
+        /* ==================================================
+           RDRS CYBER SHIELD LOGO
+        ================================================== */
+
+        .dashboard-shield-logo {
+            width: 42px;
+            height: 48px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dashboard-shield-logo::before {
+            content: "";
+            position: absolute;
+            width: 32px;
+            height: 38px;
+            border: 2px solid #38bdf8;
+            background: rgba(37, 99, 235, 0.12);
+
+            clip-path: polygon(
+                50% 0%,
+                92% 16%,
+                88% 62%,
+                70% 86%,
+                50% 100%,
+                30% 86%,
+                12% 62%,
+                8% 16%
+            );
+
+            box-shadow:
+                0 0 12px rgba(56, 189, 248, 0.35),
+                inset 0 0 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .dashboard-shield-logo .shield-core {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #38bdf8;
+            z-index: 2;
+        }
+
+        .dashboard-shield-logo .shield-line {
+            position: absolute;
+            height: 2px;
+            background: #38bdf8;
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+            z-index: 2;
+        }
+
+        .dashboard-shield-logo .line-1 {
+            width: 20px;
+            transform: rotate(90deg);
+        }
+
+        .dashboard-shield-logo .line-2 {
+            width: 15px;
+            transform: rotate(45deg);
+        }
+
+        .dashboard-shield-logo .line-3 {
+            width: 15px;
+            transform: rotate(-45deg);
+        }
+
+
+        /* ==================================================
+           EVENTS PAGE
+        ================================================== */
+
+        .page-card {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+        }
+
+
+        /* ==================================================
+           TOPBAR
+        ================================================== */
+
+        .events-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .events-topbar h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #f8fafc;
+        }
+
+        .events-topbar p {
+            margin-top: 6px;
+            color: #94a3b8;
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-info strong {
+            display: block;
+            color: #f8fafc;
+            font-size: 14px;
+        }
+
+        .user-info span {
+            display: block;
+            margin-top: 3px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+
+        /* ==================================================
+           STAT
+        ================================================== */
+
+        .event-stat {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .event-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(37,99,235,0.15);
+            color: #60a5fa;
+            font-size: 22px;
+        }
+
+        .event-stat span {
+            display: block;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .event-stat h2 {
+            margin-top: 5px;
+            color: #f8fafc;
+            font-size: 27px;
+        }
+
+
+        /* ==================================================
+           EVENTS HEADER
+        ================================================== */
+
+        .events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .events-header h2 {
+            color: #f8fafc;
+            font-size: 19px;
+        }
+
+        .events-header p {
+            margin-top: 5px;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+
+        /* ==================================================
+           EVENTS ACTIONS
+        ================================================== */
+
+        .events-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+
+        /* ==================================================
+           SEARCH
+        ================================================== */
+
+        .search {
+            width: 240px;
+            padding: 10px 13px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #e2e8f0;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .search::placeholder {
+            color: #64748b;
+        }
+
+        .search:focus {
+            border-color: #2563eb;
+        }
+
+
+        /* ==================================================
+           EXPORT CSV BUTTON
+        ================================================== */
+
+        .export-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+
+            padding: 10px 14px;
+
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 8px;
+
+            background: rgba(56, 189, 248, 0.10);
+
+            color: #7dd3fc;
+
+            text-decoration: none;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: 0.2s ease;
+
+            white-space: nowrap;
+        }
+
+        .export-button:hover {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.18);
+            color: #e0f2fe;
+
+            transform: translateY(-1px);
+        }
+
+        .export-icon {
+            font-size: 15px;
+            line-height: 1;
+        }
+
+
+        /* ==================================================
+           TABLE
+        ================================================== */
+
+        .events-table-container {
+            width: 100%;
+            overflow-x: auto;
+
+            scrollbar-width: thin;
+            scrollbar-color: #475569 #0f172a;
+        }
+
+        .events-table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .events-table-container::-webkit-scrollbar-track {
+            background: #0f172a;
+            border-radius: 10px;
+        }
+
+        .events-table-container::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+
+        .events-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 950px;
+        }
+
+        .events-table th {
+            text-align: left;
+
+            padding: 14px 16px;
+
+            font-size: 12px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+
+            color: #94a3b8;
+
+            background: #0f172a;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.08);
+
+            white-space: nowrap;
+        }
+
+        .events-table td {
+            padding: 15px 16px;
+
+            font-size: 13px;
+
+            color: #cbd5e1;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.05);
+        }
+
+        .events-table tbody tr.event-row:hover {
+            background: rgba(255,255,255,0.025);
+        }
+
+
+        /* ==================================================
+           EVENT TYPE
+        ================================================== */
+
+        .event-type {
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+
+        /* ==================================================
+           FILE
+        ================================================== */
+
+        .event-file {
+            max-width: 300px;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+
+            white-space: nowrap;
+        }
+
+
+        /* ==================================================
+           SCORE
+        ================================================== */
+
+        .score-value {
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+
+        /* ==================================================
+           ENTROPY
+        ================================================== */
+
+        .entropy-value {
+            font-weight: 600;
+            color: #38bdf8;
+        }
+
+
+        /* ==================================================
+           PROCESS
+        ================================================== */
+
+        .process-name {
+            font-weight: 600;
+            color: #a5b4fc;
+        }
+
+
+        /* ==================================================
+           DETAILS BUTTON
+        ================================================== */
+
+        .details-button {
+            border: 1px solid #334155;
+
+            background: #0f172a;
+
+            color: #93c5fd;
+
+            padding: 7px 11px;
+
+            border-radius: 7px;
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            font-weight: 600;
+
+            transition: 0.2s ease;
+        }
+
+        .details-button:hover {
+            border-color: #2563eb;
+
+            background:
+                rgba(37,99,235,0.12);
+
+            color: #bfdbfe;
+        }
+
+
+        /* ==================================================
+           DETAILS ROW
+        ================================================== */
+
+        .details-row {
+            display: none;
+        }
+
+        .details-row.show {
+            display: table-row;
+        }
+
+        .details-cell {
+            padding: 0 16px 20px 16px !important;
+
+            background:
+                rgba(15,23,42,0.65);
+        }
+
+        .details-panel {
+            margin-top: 5px;
+
+            padding: 20px;
+
+            border:
+                1px solid rgba(56,189,248,0.12);
+
+            border-radius: 10px;
+
+            background: #0f172a;
+        }
+
+        .details-title {
+            margin-bottom: 16px;
+
+            color: #f8fafc;
+
+            font-size: 14px;
+
+            font-weight: 700;
+        }
+
+        .details-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(150px, 1fr));
+
+            gap: 14px;
+        }
+
+        .detail-item {
+            padding: 13px;
+
+            border:
+                1px solid rgba(255,255,255,0.05);
+
+            border-radius: 8px;
+
+            background:
+                rgba(255,255,255,0.02);
+        }
+
+        .detail-label {
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: #64748b;
+
+            font-size: 10px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            display: block;
+
+            color: #e2e8f0;
+
+            font-size: 12px;
+
+            word-break: break-word;
+        }
+
+        .detail-value.mono {
+            font-family: monospace;
+
+            font-size: 11px;
+
+            color: #94a3b8;
+        }
+
+
+        /* ==================================================
+           RISK BADGES
+        ================================================== */
+
+        .risk-badge {
+            display: inline-block;
+
+            padding: 5px 10px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+        .risk-normal {
+            color: #94a3b8;
+
+            background:
+                rgba(148,163,184,0.12);
+        }
+
+        .risk-low {
+            color: #facc15;
+
+            background:
+                rgba(250,204,21,0.12);
+        }
+
+        .risk-medium {
+            color: #fb923c;
+
+            background:
+                rgba(251,146,60,0.12);
+        }
+
+        .risk-high {
+            color: #f87171;
+
+            background:
+                rgba(248,113,113,0.12);
+        }
+
+
+        /* ==================================================
+           EMPTY
+        ================================================== */
+
+        .empty {
+            text-align: center;
+
+            padding: 55px 20px;
+
+            color: #94a3b8;
+        }
+
+        .empty-icon {
+            font-size: 35px;
+
+            margin-bottom: 10px;
+        }
+
+
+        /* ==================================================
+           RESPONSIVE
+        ================================================== */
+
+        @media (max-width: 1000px) {
+
+            .events-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .events-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+
+        @media (max-width: 900px) {
+
+            .details-grid {
+                grid-template-columns:
+                    repeat(2, minmax(150px, 1fr));
+            }
+        }
+
+
+        @media (max-width: 768px) {
+
+            .events-topbar {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .user-area {
+                width: 100%;
+
+                justify-content: flex-start;
+            }
+
+            .user-info {
+                text-align: left;
+            }
+
+            .events-header {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .events-actions {
+                width: 100%;
+
+                flex-direction: column;
+
+                align-items: stretch;
+
+                gap: 10px;
+            }
+
+            .export-button {
+                width: 100%;
+
+                box-sizing: border-box;
+            }
+
+            .search {
+                width: 100%;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="dashboard-layout">
+
+
+    <!-- ==================================================
+         SIDEBAR
+    ================================================== -->
+
+    <aside class="sidebar">
+
+
+        <!-- LOGO -->
+
+        <div class="logo-area">
+
+            <div class="dashboard-shield-logo">
+
+                <span class="shield-core"></span>
+
+                <span class="shield-line line-1"></span>
+
+                <span class="shield-line line-2"></span>
+
+                <span class="shield-line line-3"></span>
+
+            </div>
+
+            <div>
+
+                <h2>RDRS</h2>
+
+                <span>
+                    Security Center
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav class="sidebar-nav">
+
+
+            <a href="/dashboard"
+               class="nav-item">
+
+                <span>▣</span>
+
+                Dashboard
+
+            </a>
+
+
+            <a href="/events"
+               class="nav-item active">
+
+                <span>◉</span>
+
+                Security Events
+
+            </a>
+
+
+            <a href="/threats"
+               class="nav-item">
+
+                <span>⚠</span>
+
+                Threats
+
+            </a>
+
+
+            <a href="/quarantine"
+               class="nav-item">
+
+                <span>▣</span>
+
+                Quarantine
+
+            </a>
+
+
+            <a href="/monitoring"
+               class="nav-item">
+
+                <span>◌</span>
+
+                Monitoring
+
+            </a>
+
+
+            <a href="/system-status"
+               class="nav-item">
+
+                <span>●</span>
+
+                System Status
+
+            </a>
+
+
+        </nav>
+
+
+        <!-- SIDEBAR BOTTOM -->
+
+        <div class="sidebar-bottom">
+
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+
+                    <strong>
+                        System Online
+                    </strong>
+
+                    <small>
+                        Monitoring active
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <a href="/logout"
+               class="logout-button">
+
+                <span>↪</span>
+
+                Logout
+
+            </a>
+
+
+        </div>
+
+    </aside>
+
+
+    <!-- ==================================================
+         MAIN CONTENT
+    ================================================== -->
+
+    <main class="main-content">
+
+
+        <!-- TOPBAR -->
+
+        <header class="events-topbar">
+
+            <div>
+
+                <h1>
+                    Security Events
+                </h1>
+
+                <p>
+                    Monitor and review system security activity.
+                </p>
+
+            </div>
+
+
+            <div class="user-area">
+
+                <div class="user-info">
+
+                    <strong>
+                        {{ username }}
+                    </strong>
+
+                    <span>
+                        Security Administrator
+                    </span>
+
+                </div>
+
+
+                <div class="user-avatar">
+
+                    {{ username[0]|upper }}
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- ==================================================
+             STAT
+        ================================================== -->
+
+        <section class="event-stat">
+
+            <div class="event-stat-icon">
+                ◉
+            </div>
+
+            <div>
+
+                <span>
+                    Total Security Events
+                </span>
+
+                <h2 id="totalEvents">
+                    {{ events|length }}
+                </h2>
+
+            </div>
+
+        </section>
+
+
+        <!-- ==================================================
+             EVENTS PANEL
+        ================================================== -->
+
+        <section class="page-card">
+
+
+            <div class="events-header">
+
+                <div>
+
+                    <h2>
+                        Event History
+                    </h2>
+
+                    <p>
+                        Latest security activity detected by RDRS
+                    </p>
+
+                </div>
+
+
+                <!-- EVENTS ACTIONS -->
+
+                <div class="events-actions">
+
+
+                    <!-- CSV EXPORT -->
+
+                    <a
+                        href="/events/export"
+                        class="export-button">
+
+                        <span class="export-icon">
+                            ↓
+                        </span>
+
+                        Export CSV
+
+                    </a>
+
+
+                    <!-- SEARCH -->
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        class="search"
+                        placeholder="Search events..."
+                        onkeyup="searchEvents()">
+
+                </div>
+
+            </div>
+
+
+            {% if events %}
+
+
+            <!-- ==================================================
+                 EVENTS TABLE
+            ================================================== -->
+
+            <div class="events-table-container">
+
+                <table
+                    id="eventsTable"
+                    class="events-table">
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>Event Type</th>
+
+                            <th>File</th>
+
+                            <th>Score</th>
+
+                            <th>Risk Level</th>
+
+                            <th>Entropy</th>
+
+                            <th>Process</th>
+
+                            <th>Timestamp</th>
+
+                            <th>Details</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for event in events %}
+
+
+                        <!-- ==================================================
+                             MAIN EVENT ROW
+                        ================================================== -->
+
+                        <tr class="event-row">
+
+
+                            <td>
+                                #{{ event.id }}
+                            </td>
+
+
+                            <td>
+
+                                <span class="event-type">
+
+                                    {{ event.event_type.upper() }}
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <div
+                                    class="event-file"
+                                    title="{{ event.file_path }}">
+
+                                    {{ event.file_path }}
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="score-value">
+
+                                    {{ event.score }}
+
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+
+                                {% if event.risk_level == "HIGH" %}
+
+                                    <span
+                                        class="risk-badge risk-high">
+
+                                        HIGH
+
+                                    </span>
+
+
+                                {% elif event.risk_level == "MEDIUM" %}
+
+                                    <span
+                                        class="risk-badge risk-medium">
+
+                                        MEDIUM
+
+                                    </span>
+
+
+                                {% elif event.risk_level == "LOW" %}
+
+                                    <span
+                                        class="risk-badge risk-low">
+
+                                        LOW
+
+                                    </span>
+
+
+                                {% else %}
+
+                                    <span
+                                        class="risk-badge risk-normal">
+
+                                        NORMAL
+
+                                    </span>
+
+                                {% endif %}
+
+
+                            </td>
+
+
+                            <td>
+
+                                {% if event.entropy is not none %}
+
+                                    <span class="entropy-value">
+
+                                        {{ "%.4f"|format(event.entropy) }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if event.process_name %}
+
+                                    <span class="process-name">
+
+                                        {{ event.process_name }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ event.timestamp }}
+
+                            </td>
+
+
+                            <td>
+
+                                <button
+                                    type="button"
+                                    class="details-button"
+                                    onclick="toggleDetails('details-{{ event.id }}', this)">
+
+                                    View Details
+
+                                </button>
+
+                            </td>
+
+
+                        </tr>
+
+
+                        <!-- ==================================================
+                             DETAILS ROW
+                        ================================================== -->
+
+                        <tr
+                            id="details-{{ event.id }}"
+                            class="details-row">
+
+
+                            <td
+                                colspan="9"
+                                class="details-cell">
+
+
+                                <div class="details-panel">
+
+
+                                    <div class="details-title">
+
+                                        Technical Event Details
+
+                                    </div>
+
+
+                                    <div class="details-grid">
+
+
+                                        <!-- PID -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                Process ID
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {% if event.process_pid %}
+
+                                                    {{ event.process_pid }}
+
+                                                {% else %}
+
+                                                    —
+
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- CPU -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                CPU Usage
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {% if event.process_cpu is not none %}
+
+                                                    {{ "%.2f"|format(event.process_cpu) }}%
+
+                                                {% else %}
+
+                                                    —
+
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- MEMORY -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                Memory Usage
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {% if event.process_memory is not none %}
+
+                                                    {{ "%.2f"|format(event.process_memory) }}%
+
+                                                {% else %}
+
+                                                    —
+
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- ENTROPY -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                File Entropy
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {% if event.entropy is not none %}
+
+                                                    {{ "%.4f"|format(event.entropy) }}
+
+                                                {% else %}
+
+                                                    —
+
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- PROCESS -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                Process Name
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {% if event.process_name %}
+
+                                                    {{ event.process_name }}
+
+                                                {% else %}
+
+                                                    —
+
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- RISK -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                Risk Level
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {{ event.risk_level }}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- SCORE -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                Threat Score
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {{ event.score }}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- EVENT TYPE -->
+
+                                        <div class="detail-item">
+
+                                            <span class="detail-label">
+                                                Event Type
+                                            </span>
+
+                                            <span class="detail-value">
+
+                                                {{ event.event_type.upper() }}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- EXE PATH -->
+
+                                        <div
+                                            class="detail-item"
+                                            style="grid-column: span 2;">
+
+                                            <span class="detail-label">
+                                                Executable Path
+                                            </span>
+
+                                            <span
+                                                class="detail-value mono">
+
+                                                {% if event.process_exe %}
+
+                                                    {{ event.process_exe }}
+
+                                                {% else %}
+
+                                                    —
+
+                                                {% endif %}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <!-- FILE PATH -->
+
+                                        <div
+                                            class="detail-item"
+                                            style="grid-column: span 2;">
+
+                                            <span class="detail-label">
+                                                Monitored File
+                                            </span>
+
+                                            <span
+                                                class="detail-value mono">
+
+                                                {{ event.file_path }}
+
+                                            </span>
+
+                                        </div>
+
+
+                                    </div>
+
+
+                                </div>
+
+
+                            </td>
+
+
+                        </tr>
+
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            {% else %}
+
+
+            <!-- ==================================================
+                 EMPTY STATE
+            ================================================== -->
+
+            <div class="empty">
+
+                <div class="empty-icon">
+                    ◌
+                </div>
+
+                <h3>
+                    No Security Events
+                </h3>
+
+                <p>
+                    Security events will appear here when detected.
+                </p>
+
+            </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+        <!-- FOOTER -->
+
+        <footer>
+
+            <span>
+                RDRS v1.0
+            </span>
+
+            <span>
+                Ransomware Detection &amp; Response System
+            </span>
+
+        </footer>
+
+
+    </main>
+
+</div>
+
+
+<!-- ==================================================
+     JAVASCRIPT
+================================================== -->
+
+<script>
+
+
+    /* ==================================================
+       SEARCH EVENTS
+    ================================================== */
+
+    function searchEvents() {
+
+        const input =
+            document.getElementById("searchInput");
+
+        const filter =
+            input.value.toLowerCase();
+
+        const table =
+            document.getElementById("eventsTable");
+
+        if (!table) {
+            return;
+        }
+
+        const rows =
+            table.querySelectorAll(
+                "tbody tr.event-row"
+            );
+
+        rows.forEach(function(row) {
+
+            const text =
+                row.textContent.toLowerCase();
+
+            const detailsRow =
+                row.nextElementSibling;
+
+            if (text.includes(filter)) {
+
+                row.style.display = "";
+
+            } else {
+
+                row.style.display = "none";
+
+                if (detailsRow) {
+
+                    detailsRow.classList.remove("show");
+
+                }
+
+            }
+
+        });
+
+    }
+
+
+    /* ==================================================
+       TOGGLE TECHNICAL DETAILS
+    ================================================== */
+
+    function toggleDetails(id, button) {
+
+        const detailsRow =
+            document.getElementById(id);
+
+        if (!detailsRow) {
+            return;
+        }
+
+
+        const isOpen =
+            detailsRow.classList.contains("show");
+
+
+        if (isOpen) {
+
+            detailsRow.classList.remove("show");
+
+            button.textContent =
+                "View Details";
+
+        } else {
+
+            detailsRow.classList.add("show");
+
+            button.textContent =
+                "Hide Details";
+
+        }
+
+    }
+
+</script>
+
+
+</body>
+
+</html>

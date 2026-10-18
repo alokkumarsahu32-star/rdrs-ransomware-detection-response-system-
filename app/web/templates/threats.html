@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Threats | RDRS</title>
+
+    <link rel="stylesheet"
+          href="/static/css/dashboard.css">
+
+    <style>
+
+        /* ==================================================
+           RDRS CYBER SHIELD LOGO
+        ================================================== */
+
+        .dashboard-shield-logo {
+            width: 42px;
+            height: 48px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dashboard-shield-logo::before {
+            content: "";
+            position: absolute;
+            width: 32px;
+            height: 38px;
+            border: 2px solid #38bdf8;
+            background: rgba(37, 99, 235, 0.12);
+            clip-path: polygon(
+                50% 0%,
+                92% 16%,
+                88% 62%,
+                70% 86%,
+                50% 100%,
+                30% 86%,
+                12% 62%,
+                8% 16%
+            );
+            box-shadow:
+                0 0 12px rgba(56, 189, 248, 0.35),
+                inset 0 0 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .dashboard-shield-logo .shield-core {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #38bdf8;
+            z-index: 2;
+        }
+
+        .dashboard-shield-logo .shield-line {
+            position: absolute;
+            height: 2px;
+            background: #38bdf8;
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+            z-index: 2;
+        }
+
+        .dashboard-shield-logo .line-1 {
+            width: 20px;
+            transform: rotate(90deg);
+        }
+
+        .dashboard-shield-logo .line-2 {
+            width: 15px;
+            transform: rotate(45deg);
+        }
+
+        .dashboard-shield-logo .line-3 {
+            width: 15px;
+            transform: rotate(-45deg);
+        }
+
+
+        /* ==================================================
+           THREAT STAT
+        ================================================== */
+
+        .threat-stat {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .threat-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            font-size: 22px;
+        }
+
+        .threat-stat span {
+            display: block;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .threat-stat h2 {
+            margin-top: 5px;
+            color: #f8fafc;
+            font-size: 27px;
+        }
+
+
+        /* ==================================================
+           PAGE CARD
+        ================================================== */
+
+        .page-card {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+        }
+
+
+        /* ==================================================
+           THREAT HEADER
+        ================================================== */
+
+        .threat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .threat-header h2 {
+            color: #f8fafc;
+            font-size: 19px;
+        }
+
+        .threat-header p {
+            margin-top: 5px;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+
+        /* ==================================================
+           HEADER ACTIONS
+        ================================================== */
+
+        .threat-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search {
+            width: 240px;
+            padding: 10px 13px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #e2e8f0;
+            outline: none;
+        }
+
+        .search::placeholder {
+            color: #64748b;
+        }
+
+        .search:focus {
+            border-color: #ef4444;
+        }
+
+        .export-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            transition: 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .export-button:hover {
+            background: rgba(239, 68, 68, 0.20);
+            border-color: rgba(239, 68, 68, 0.55);
+            color: #fecaca;
+            transform: translateY(-1px);
+        }
+
+        .export-icon {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+
+        /* ==================================================
+           THREAT TABLE
+        ================================================== */
+
+        .threat-table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .threat-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1150px;
+        }
+
+        .threat-table th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            background: #0f172a;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .threat-table td {
+            padding: 15px 16px;
+            font-size: 13px;
+            color: #cbd5e1;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+
+        .threat-table tbody tr:hover {
+            background: rgba(255,255,255,0.025);
+        }
+
+
+        /* ==================================================
+           EVENT TYPE
+        ================================================== */
+
+        .event-type {
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #e2e8f0;
+        }
+
+
+        /* ==================================================
+           FILE PATH
+        ================================================== */
+
+        .file-path {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+
+        /* ==================================================
+           SCORE
+        ================================================== */
+
+        .score {
+            font-weight: 700;
+            color: #f87171;
+        }
+
+
+        /* ==================================================
+           BADGES
+        ================================================== */
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .high {
+            color: #f87171;
+            background: rgba(248,113,113,0.12);
+        }
+
+        .medium {
+            color: #fb923c;
+            background: rgba(251,146,60,0.12);
+        }
+
+        .low {
+            color: #facc15;
+            background: rgba(250,204,21,0.12);
+        }
+
+
+        /* ==================================================
+           ENTROPY
+        ================================================== */
+
+        .entropy-value {
+            font-weight: 600;
+            color: #c4b5fd;
+        }
+
+
+        /* ==================================================
+           PROCESS
+        ================================================== */
+
+        .process-name {
+            color: #7dd3fc;
+            font-weight: 600;
+        }
+
+
+        /* ==================================================
+           REASON
+        ================================================== */
+
+        .reason {
+            max-width: 280px;
+            color: #cbd5e1;
+        }
+
+
+        /* ==================================================
+           DETAILS BUTTON
+        ================================================== */
+
+        .details-button {
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #94a3b8;
+            border-radius: 7px;
+            padding: 7px 10px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+
+        .details-button:hover {
+            color: #e2e8f0;
+            border-color: #64748b;
+            background: #172033;
+        }
+
+
+        /* ==================================================
+           DETAILS ROW
+        ================================================== */
+
+        .details-row {
+            display: none;
+            background: rgba(15, 23, 42, 0.75);
+        }
+
+        .details-row.show {
+            display: table-row;
+        }
+
+        .details-container {
+            padding: 18px;
+        }
+
+        .details-title {
+            color: #f8fafc;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .detail-item {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 9px;
+            padding: 12px;
+            min-width: 0;
+        }
+
+        .detail-label {
+            display: block;
+            color: #64748b;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            color: #cbd5e1;
+            font-size: 12px;
+            word-break: break-word;
+        }
+
+        .detail-value.highlight {
+            color: #7dd3fc;
+            font-weight: 600;
+        }
+
+        .detail-value.risk-high {
+            color: #f87171;
+            font-weight: 700;
+        }
+
+        .detail-value.risk-medium {
+            color: #fb923c;
+            font-weight: 700;
+        }
+
+        .detail-value.risk-low {
+            color: #facc15;
+            font-weight: 700;
+        }
+
+
+        /* ==================================================
+           EMPTY STATE
+        ================================================== */
+
+        .empty {
+            text-align: center;
+            padding: 55px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-icon {
+            font-size: 35px;
+            margin-bottom: 10px;
+            color: #4ade80;
+        }
+
+        .empty h3 {
+            color: #e2e8f0;
+            margin-bottom: 6px;
+        }
+
+
+        /* ==================================================
+           RESPONSIVE
+        ================================================== */
+
+        @media (max-width: 1100px) {
+
+            .threat-header {
+                align-items: flex-start;
+            }
+
+            .threat-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search {
+                width: 240px;
+            }
+
+            .details-grid {
+                grid-template-columns: repeat(2, minmax(150px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            .threat-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .threat-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .search {
+                width: 100%;
+            }
+
+            .export-button {
+                width: 100%;
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-card {
+                padding: 16px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="dashboard-layout">
+
+
+    <!-- ==================================================
+         SIDEBAR
+    ================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo-area">
+
+            <div class="dashboard-shield-logo">
+
+                <span class="shield-core"></span>
+
+                <span class="shield-line line-1"></span>
+
+                <span class="shield-line line-2"></span>
+
+                <span class="shield-line line-3"></span>
+
+            </div>
+
+            <div>
+
+                <h2>RDRS</h2>
+
+                <span>Security Center</span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <a href="/dashboard"
+               class="nav-item">
+
+                <span>▣</span>
+                Dashboard
+
+            </a>
+
+
+            <a href="/events"
+               class="nav-item">
+
+                <span>◉</span>
+                Security Events
+
+            </a>
+
+
+            <a href="/threats"
+               class="nav-item active">
+
+                <span>⚠</span>
+                Threats
+
+            </a>
+
+
+            <a href="/quarantine"
+               class="nav-item">
+
+                <span>▣</span>
+                Quarantine
+
+            </a>
+
+
+            <a href="/monitoring"
+               class="nav-item">
+
+                <span>◌</span>
+                Monitoring
+
+            </a>
+
+
+            <a href="/system-status"
+               class="nav-item">
+
+                <span>●</span>
+                System Status
+
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+
+                    <strong>System Online</strong>
+
+                    <small>
+                        Monitoring active
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <a href="/logout"
+               class="logout-button">
+
+                <span>↪</span>
+                Logout
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==================================================
+         MAIN CONTENT
+    ================================================== -->
+
+    <main class="main-content">
+
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h1>
+                    Threat Detection
+                </h1>
+
+                <p>
+                    Suspicious security activities detected by RDRS.
+                </p>
+
+            </div>
+
+
+            <div class="user-area">
+
+                <div class="user-info">
+
+                    <strong>
+                        {{ username }}
+                    </strong>
+
+                    <span>
+                        Security Administrator
+                    </span>
+
+                </div>
+
+
+                <div class="user-avatar">
+
+                    {{ username[0]|upper }}
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ==================================================
+             THREAT STAT
+        ================================================== -->
+
+        <section class="threat-stat">
+
+            <div class="threat-stat-icon">
+                ⚠
+            </div>
+
+            <div>
+
+                <span>
+                    Detected Threats
+                </span>
+
+                <h2>
+                    {{ threats|length }}
+                </h2>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==================================================
+             THREAT HISTORY
+        ================================================== -->
+
+        <section class="page-card">
+
+
+            <div class="threat-header">
+
+                <div>
+
+                    <h2>
+                        Threat History
+                    </h2>
+
+                    <p>
+                        Suspicious activities identified by the detection engine.
+                    </p>
+
+                </div>
+
+
+                <div class="threat-actions">
+
+                    <a href="/threats/export"
+                       class="export-button">
+
+                        <span class="export-icon">↓</span>
+
+                        Export CSV
+
+                    </a>
+
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        class="search"
+                        placeholder="Search threats..."
+                        onkeyup="searchThreats()"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            {% if threats %}
+
+
+            <div class="threat-table-container">
+
+
+                <table id="threatTable"
+                       class="threat-table">
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>Event</th>
+
+                            <th>File</th>
+
+                            <th>Score</th>
+
+                            <th>Risk</th>
+
+                            <th>Entropy</th>
+
+                            <th>Process</th>
+
+                            <th>Reason</th>
+
+                            <th>Timestamp</th>
+
+                            <th>Details</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                    {% for threat in threats %}
+
+
+                    <tr class="threat-row">
+
+
+                        <td>
+                            #{{ threat.id }}
+                        </td>
+
+
+                        <td>
+
+                            <span class="event-type">
+
+                                {{ threat.event_type.upper() }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <div
+                                class="file-path"
+                                title="{{ threat.file_path }}"
+                            >
+
+                                {{ threat.file_path }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="score">
+
+                                {{ threat.score }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+
+                            {% if threat.risk_level == "HIGH" %}
+
+                                <span class="badge high">
+                                    HIGH
+                                </span>
+
+                            {% elif threat.risk_level == "MEDIUM" %}
+
+                                <span class="badge medium">
+                                    MEDIUM
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge low">
+                                    LOW
+                                </span>
+
+                            {% endif %}
+
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="entropy-value">
+
+                                {% if threat.entropy is not none %}
+
+                                    {{ threat.entropy }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="process-name">
+
+                                {% if threat.process_name %}
+
+                                    {{ threat.process_name }}
+
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <div class="reason">
+
+                                {{ threat.reason
+                                   if threat.reason is defined
+                                   else "Suspicious activity detected" }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ threat.timestamp }}
+
+                        </td>
+
+
+                        <td>
+
+                            <button
+                                type="button"
+                                class="details-button"
+                                onclick="toggleDetails('details-{{ threat.id }}', this)"
+                            >
+
+                                View
+
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+
+
+                    <!-- ==================================================
+                         TECHNICAL DETAILS
+                    ================================================== -->
+
+                    <tr id="details-{{ threat.id }}"
+                        class="details-row">
+
+                        <td colspan="10">
+
+                            <div class="details-container">
+
+                                <div class="details-title">
+                                    Technical Threat Details
+                                </div>
+
+
+                                <div class="details-grid">
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Process ID
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {% if threat.process_pid is not none %}
+                                                {{ threat.process_pid }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            CPU Usage
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {% if threat.process_cpu is not none %}
+                                                {{ threat.process_cpu }}%
+                                            {% else %}
+                                                —
+                                            {% endif %}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Memory Usage
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {% if threat.process_memory is not none %}
+                                                {{ threat.process_memory }}%
+                                            {% else %}
+                                                —
+                                            {% endif %}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            File Entropy
+                                        </span>
+
+                                        <span class="detail-value highlight">
+
+                                            {% if threat.entropy is not none %}
+                                                {{ threat.entropy }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Process Name
+                                        </span>
+
+                                        <span class="detail-value highlight">
+
+                                            {% if threat.process_name %}
+                                                {{ threat.process_name }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Risk Level
+                                        </span>
+
+                                        <span class="detail-value
+                                            {% if threat.risk_level == 'HIGH' %}
+                                                risk-high
+                                            {% elif threat.risk_level == 'MEDIUM' %}
+                                                risk-medium
+                                            {% else %}
+                                                risk-low
+                                            {% endif %}
+                                        ">
+
+                                            {{ threat.risk_level }}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Threat Score
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {{ threat.score }}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Event Type
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {{ threat.event_type.upper() }}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Executable Path
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {% if threat.process_exe %}
+                                                {{ threat.process_exe }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Monitored File
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {{ threat.file_path }}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="detail-item">
+
+                                        <span class="detail-label">
+                                            Detection Time
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            {{ threat.timestamp }}
+
+                                        </span>
+
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+
+                    {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            {% else %}
+
+
+            <div class="empty">
+
+                <div class="empty-icon">
+                    ✓
+                </div>
+
+                <h3>
+                    No Threats Detected
+                </h3>
+
+                <p>
+                    No suspicious security activities have been detected.
+                </p>
+
+            </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+
+        <!-- FOOTER -->
+
+        <footer>
+
+            <span>
+                RDRS v1.0
+            </span>
+
+            <span>
+                Ransomware Detection &amp; Response System
+            </span>
+
+        </footer>
+
+
+    </main>
+
+</div>
+
+
+
+<!-- ==================================================
+     SEARCH + DETAILS SCRIPT
+================================================== -->
+
+<script>
+
+function searchThreats() {
+
+    const input =
+        document.getElementById("searchInput");
+
+    const filter =
+        input.value.toLowerCase();
+
+    const table =
+        document.getElementById("threatTable");
+
+    if (!table) {
+        return;
+    }
+
+    const rows =
+        table.querySelectorAll("tbody tr.threat-row");
+
+    rows.forEach(function(row) {
+
+        const text =
+            row.textContent.toLowerCase();
+
+        const detailsRow =
+            document.getElementById(
+                row.nextElementSibling
+                    ? row.nextElementSibling.id
+                    : ""
+            );
+
+        if (text.includes(filter)) {
+
+            row.style.display = "";
+
+        } else {
+
+            row.style.display = "";
+
+            if (detailsRow) {
+                detailsRow.classList.remove("show");
+            }
+
+            row.style.display = "none";
+        }
+
+    });
+
+}
+
+
+function toggleDetails(id, button) {
+
+    const details =
+        document.getElementById(id);
+
+    if (!details) {
+        return;
+    }
+
+    if (details.classList.contains("show")) {
+
+        details.classList.remove("show");
+
+        button.textContent = "View";
+
+    } else {
+
+        details.classList.add("show");
+
+        button.textContent = "Hide";
+
+    }
+
+}
+
+</script>
+
+
+</body>
+
+</html>

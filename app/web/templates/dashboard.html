@@ -1,0 +1,888 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDRS | Security Dashboard</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+
+    <style>
+        .dashboard-shield-logo {
+            width: 42px;
+            height: 48px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dashboard-shield-logo::before {
+            content: "";
+            position: absolute;
+            width: 32px;
+            height: 38px;
+            border: 2px solid #38bdf8;
+            background: rgba(37, 99, 235, 0.12);
+            clip-path: polygon(
+                50% 0%, 92% 16%, 88% 62%, 70% 86%,
+                50% 100%, 30% 86%, 12% 62%, 8% 16%
+            );
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+        }
+
+        .dashboard-shield-logo .shield-core {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #38bdf8;
+            z-index: 2;
+        }
+
+        .dashboard-shield-logo .shield-line {
+            position: absolute;
+            height: 2px;
+            background: #38bdf8;
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+            z-index: 2;
+        }
+
+        .dashboard-shield-logo .line-1 {
+            width: 20px;
+            transform: rotate(90deg);
+        }
+
+        .dashboard-shield-logo .line-2 {
+            width: 15px;
+            transform: rotate(45deg);
+        }
+
+        .dashboard-shield-logo .line-3 {
+            width: 15px;
+            transform: rotate(-45deg);
+        }
+
+        .threat-chart {
+            width: 100%;
+            height: 260px;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 25px 10px 10px;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            overflow-x: auto;
+        }
+
+        .chart-bar-wrapper {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            min-width: 35px;
+        }
+
+        .chart-bar {
+            width: 100%;
+            max-width: 42px;
+            min-height: 4px;
+            border-radius: 6px 6px 2px 2px;
+            background: linear-gradient(to top, #2563eb, #38bdf8);
+            transition: height 0.3s ease;
+        }
+
+        .chart-label {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        .chart-count {
+            margin-bottom: 5px;
+            font-size: 11px;
+            color: #e2e8f0;
+        }
+
+        .events-table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+.events-table {
+    width: 100%;
+    min-width: 1100px;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+
+.events-table th {
+    text-align: left;
+    padding: 10px 7px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    color: #94a3b8;
+    background: #0f172a;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    overflow-wrap: anywhere;
+}
+
+.events-table td {
+    padding: 10px 7px;
+    font-size: 12px;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    overflow-wrap: anywhere;
+}
+
+
+        .events-table tr:hover {
+            background: rgba(255,255,255,0.025);
+        }
+
+        .event-type {
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .event-file {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .risk-normal {
+            color: #94a3b8;
+            background: rgba(148,163,184,0.12);
+        }
+
+        .risk-low {
+            color: #facc15;
+            background: rgba(250,204,21,0.12);
+        }
+
+        .risk-medium {
+            color: #fb923c;
+            background: rgba(251,146,60,0.12);
+        }
+
+        .risk-high {
+            color: #f87171;
+            background: rgba(248,113,113,0.12);
+        }
+
+        .score-value {
+            font-weight: 700;
+        }
+
+        .no-events {
+            text-align: center;
+            padding: 50px 20px;
+            color: #94a3b8;
+        }
+
+        .no-events-icon {
+            font-size: 35px;
+            margin-bottom: 10px;
+        }
+
+        .logout-button {
+            text-decoration: none;
+        }
+
+        .offline {
+            color: #f87171;
+        }
+
+        .status-dot.offline-dot {
+            background: #f87171;
+            box-shadow: 0 0 8px rgba(248,113,113,0.7);
+        }
+
+        .live-indicator.offline-indicator {
+            color: #f87171;
+        }
+
+        .live-indicator.offline-indicator span {
+            background: #f87171;
+            box-shadow: 0 0 8px rgba(248,113,113,0.7);
+        }
+
+        .live-updating {
+            animation: livePulse 0.35s ease;
+        }
+
+        @keyframes livePulse {
+            0% { opacity: 0.45; }
+            100% { opacity: 1; }
+        }
+
+        .dashboard-update-error {
+            color: #f87171;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="dashboard-shield-logo">
+                <span class="shield-core"></span>
+                <span class="shield-line line-1"></span>
+                <span class="shield-line line-2"></span>
+                <span class="shield-line line-3"></span>
+            </div>
+            <div>
+                <h2>RDRS</h2>
+                <span>Security Center</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/dashboard" class="nav-item active">
+                <span>▣</span> Dashboard
+            </a>
+            <a href="/events" class="nav-item">
+                <span>◉</span> Security Events
+            </a>
+            <a href="/threats" class="nav-item">
+                <span>⚠</span> Threats
+            </a>
+            <a href="/quarantine" class="nav-item">
+                <span>▣</span> Quarantine
+            </a>
+            <a href="/monitoring" class="nav-item">
+                <span>◌</span> Monitoring
+            </a>
+            <a href="/system-status" class="nav-item">
+                <span>●</span> System Status
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="system-status" id="sidebar-system-status">
+                {% if monitoring_status == "ACTIVE" %}
+                    <span class="status-dot"></span>
+                    <div>
+                        <strong>System Online</strong>
+                        <small>Monitoring active</small>
+                    </div>
+                {% else %}
+                    <span class="status-dot offline-dot"></span>
+                    <div>
+                        <strong>System Offline</strong>
+                        <small>Monitoring stopped</small>
+                    </div>
+                {% endif %}
+            </div>
+
+            <a href="/logout" class="logout-button">
+                <span>↪</span> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div>
+                <h1>Security Dashboard</h1>
+                <p>Monitor and manage your system security.</p>
+            </div>
+            
+
+            <div class="user-area">
+                <div class="user-info">
+                    <strong>{{ username }}</strong>
+                    <span>Security Administrator</span>
+                </div>
+                <div class="user-avatar">{{ username[0]|upper }}</div>
+            </div>
+        </header>
+
+        <!-- SECURITY STATUS -->
+        <section class="security-banner">
+            <div class="dashboard-shield-logo">
+                <span class="shield-core"></span>
+                <span class="shield-line line-1"></span>
+                <span class="shield-line line-2"></span>
+                <span class="shield-line line-3"></span>
+            </div>
+
+            <div id="protection-message">
+                {% if monitoring_status == "ACTIVE" %}
+                    <h3>Protection System Active</h3>
+                    <p>RDRS is actively monitoring your system for suspicious activity.</p>
+                {% else %}
+                    <h3>Protection System Paused</h3>
+                    <p>File monitoring is currently stopped. Your system is not being actively monitored.</p>
+                {% endif %}
+            </div>
+
+            {% if monitoring_status == "ACTIVE" %}
+                <div class="live-indicator" id="live-indicator">
+                    <span></span> LIVE
+                </div>
+            {% else %}
+                <div class="live-indicator offline-indicator" id="live-indicator">
+                    <span></span> OFFLINE
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- STATISTICS -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">◉</div>
+                <div>
+                    <span>Total Events</span>
+                    <h2 id="total-events-count">{{ total_events }}</h2>
+                    <small>Security events detected</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon red">⚠</div>
+                <div>
+                    <span>High Risk</span>
+                    <h2 id="high-risk-count">{{ high_risk_events }}</h2>
+                    <small>Critical security events</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon orange">◈</div>
+                <div>
+                    <span>Threats Detected</span>
+                    <h2 id="threats-count">{{ suspicious_events }}</h2>
+                    <small>Suspicious activities</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">✓</div>
+                <div>
+                    <span>Quarantined</span>
+                    <h2 id="quarantined-count">{{ quarantined_events }}</h2>
+                    <small>Files isolated</small>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTENT GRID -->
+        <section class="content-grid">
+
+            <!-- THREAT OVERVIEW -->
+            <div class="panel threat-panel" id="threat-overview">
+                <div class="panel-header">
+                    <div>
+                        <h2>Threat Overview</h2>
+                        <p>Recent security activity</p>
+                    </div>
+                    <span class="period">Recent Events</span>
+                </div>
+
+                <div class="threat-chart" id="threat-chart">
+                    {% if recent_events %}
+                        {% for event in recent_events[:10] %}
+                            <div class="chart-bar-wrapper">
+                                <span class="chart-count">{{ event.score }}</span>
+                                <div class="chart-bar"
+                                     style="height: {{ [event.score * 8, 100] | min }}%;">
+                                </div>
+                                <span class="chart-label">{{ event.event_type[:6] }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-events">
+                            <div class="no-events-icon">◌</div>
+                            <h3>No Threat Data</h3>
+                            <p>Threat activity will appear here when events are detected.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SYSTEM STATUS -->
+            <div class="panel" id="system-status">
+                <div class="panel-header">
+                    <div>
+                        <h2>System Status</h2>
+                        <p>Current protection status</p>
+                    </div>
+                </div>
+
+                <div class="status-list">
+                    <div class="status-row">
+                        <div class="status-name">
+                            <span class="status-check">
+                                {% if monitoring_status == "ACTIVE" %}✓{% else %}!{% endif %}
+                            </span>
+                            File Monitoring
+                        </div>
+                        <strong class="{% if monitoring_status == 'ACTIVE' %}online{% else %}offline{% endif %}">
+                            {{ monitoring_status }}
+                        </strong>
+                    </div>
+
+                    <div class="status-row">
+                        <div class="status-name">
+                            <span class="status-check">
+                                {% if detection_status == "ACTIVE" %}✓{% else %}!{% endif %}
+                            </span>
+                            Threat Detection
+                        </div>
+                        <strong class="{% if detection_status == 'ACTIVE' %}online{% else %}offline{% endif %}">
+                            {{ detection_status }}
+                        </strong>
+                    </div>
+
+                    <div class="status-row">
+                        <div class="status-name">
+                            <span class="status-check">
+                                {% if response_status == "ACTIVE" %}✓{% else %}!{% endif %}
+                            </span>
+                            Response System
+                        </div>
+                        <strong class="{% if response_status == 'ACTIVE' %}online{% else %}offline{% endif %}">
+                            {{ response_status }}
+                        </strong>
+                    </div>
+
+                    <div class="status-row">
+                        <div class="status-name">
+                            <span class="status-check">
+                                {% if database_status == "CONNECTED" %}✓{% else %}!{% endif %}
+                            </span>
+                            Database
+                        </div>
+                        <strong class="{% if database_status == 'CONNECTED' %}online{% else %}offline{% endif %}">
+                            {{ database_status }}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- CONNECTED DEVICES -->
+<section class="panel devices-panel" id="connected-devices">
+    <div class="panel-header">
+        <div>
+            <h2>Connected Devices</h2>
+            <p>Computers enrolled in your RDRS account</p>
+        </div>
+        <span class="period">{{ devices|length }} Device(s)</span>
+    </div>
+
+    {% if devices %}
+        <div class="events-table-container">
+            <table class="events-table">
+                <thead>
+                    <tr>
+                        <th>Device Name</th>
+                        <th>Operating System</th>
+                        <th>Status</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for device in devices %}
+                        <tr>
+                            <td>{{ device.device_name }}</td>
+                            <td>{{ device.operating_system }}</td>
+                            <td>
+                                <span class="risk-badge {% if device.status == 'ONLINE' %}risk-normal{% else %}risk-high{% endif %}">
+                                    {{ device.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if device.last_seen %}
+                                    {{ device.last_seen.strftime("%d %b %Y, %H:%M:%S") }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="no-events">
+            <div class="no-events-icon">▣</div>
+            <h3>No Devices Enrolled</h3>
+            
+        </div>
+    {% endif %}
+</section>
+
+        <!-- RECENT SECURITY EVENTS -->
+        <section class="panel events-panel" id="recent-events">
+            <div class="panel-header">
+                <div>
+                    <h2>Recent Security Events</h2>
+                    <p>Latest activity detected by RDRS</p>
+                </div>
+
+                <button class="refresh-button" id="refresh-dashboard" type="button">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <div class="events-table-container">
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Time</th>
+                            <th>Event</th>
+                            <th>File</th>
+                            <th>Score</th>
+                            <th>Risk</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="recent-events-body">
+                        {% if recent_events %}
+                            {% for event in recent_events %}
+                                <tr>
+                                    <td>#{{ event.id }}</td>
+                                    <td>{{ event.timestamp.strftime("%H:%M:%S") }}</td>
+                                    <td class="event-type">{{ event.event_type }}</td>
+                                    <td class="event-file" title="{{ event.file_path or '' }}">
+                                        {{ event.file_path or "—" }}
+                                    </td>
+                                    <td class="score-value">{{ event.score }}</td>
+                                    <td>
+                                        <span class="risk-badge risk-{{ event.risk_level|lower }}">
+                                            {{ event.risk_level }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="no-events">
+                                        <div class="no-events-icon">✓</div>
+                                        <h3>No Recent Events</h3>
+                                        <p>Security events will appear here when detected.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <p id="dashboard-update-error" class="dashboard-update-error" hidden>
+                Dashboard update failed. Please check your connection.
+            </p>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <span>RDRS v1.0</span>
+            <span>Ransomware Detection &amp; Response System</span>
+        </footer>
+    </main>
+</div>
+
+<script>
+"use strict";
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+let dashboardUpdateInProgress = false;
+
+async function updateDashboard() {
+    if (dashboardUpdateInProgress) return;
+
+    dashboardUpdateInProgress = true;
+
+    const errorMessage = document.getElementById("dashboard-update-error");
+
+    try {
+        const response = await fetch("/api/dashboard", {
+            method: "GET",
+            headers: { "Accept": "application/json" },
+            cache: "no-store",
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            throw new Error("Dashboard API returned HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        if (!data.authenticated) {
+            window.location.href = "/";
+            return;
+        }
+
+        setText("total-events-count", data.total_events);
+        setText("high-risk-count", data.high_risk_events);
+        setText("threats-count", data.suspicious_events);
+        setText("quarantined-count", data.quarantined_events);
+
+        updateStatusRow(1, data.monitoring_status, data.monitoring_status === "ACTIVE");
+        updateStatusRow(2, data.detection_status, data.detection_status === "ACTIVE");
+        updateStatusRow(3, data.response_status, data.response_status === "ACTIVE");
+        updateStatusRow(4, data.database_status, data.database_status === "CONNECTED");
+
+        updateSidebarStatus(data.monitoring_status);
+        updateProtectionBanner(data.monitoring_status);
+        updateRecentEvents(data.recent_events);
+        updateThreatChart(data.recent_events);
+
+        if (errorMessage) errorMessage.hidden = true;
+    } catch (error) {
+        console.error("RDRS live update error:", error);
+
+        if (errorMessage) {
+            errorMessage.hidden = false;
+        }
+    } finally {
+        dashboardUpdateInProgress = false;
+    }
+}
+
+function setText(elementId, value) {
+    const element = document.getElementById(elementId);
+
+    if (element && value !== undefined && value !== null) {
+        const newValue = String(value);
+
+        if (element.textContent !== newValue) {
+            element.textContent = newValue;
+            element.classList.remove("live-updating");
+            void element.offsetWidth;
+            element.classList.add("live-updating");
+        }
+    }
+}
+
+function updateStatusRow(rowNumber, status, isOnline) {
+    const row = document.querySelector(
+        "#system-status .status-row:nth-child(" + rowNumber + ")"
+    );
+
+    if (!row) return;
+
+    const statusElement = row.querySelector("strong");
+    const checkElement = row.querySelector(".status-check");
+
+    if (statusElement) {
+        statusElement.textContent = status;
+        statusElement.classList.toggle("online", isOnline);
+        statusElement.classList.toggle("offline", !isOnline);
+    }
+
+    if (checkElement) {
+        checkElement.textContent = isOnline ? "✓" : "!";
+    }
+}
+
+function updateSidebarStatus(status) {
+    const sidebar = document.getElementById("sidebar-system-status");
+    if (!sidebar) return;
+
+    const online = status === "ACTIVE";
+    sidebar.replaceChildren();
+
+    const dot = document.createElement("span");
+    dot.className = online ? "status-dot" : "status-dot offline-dot";
+
+    const content = document.createElement("div");
+    const heading = document.createElement("strong");
+    heading.textContent = online ? "System Online" : "System Offline";
+
+    const description = document.createElement("small");
+    description.textContent = online ? "Monitoring active" : "Monitoring stopped";
+
+    content.append(heading, description);
+    sidebar.append(dot, content);
+}
+
+function updateProtectionBanner(status) {
+    const message = document.getElementById("protection-message");
+    const indicator = document.getElementById("live-indicator");
+
+    if (!message || !indicator) return;
+
+    const online = status === "ACTIVE";
+    message.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = online
+        ? "Protection System Active"
+        : "Protection System Paused";
+
+    const paragraph = document.createElement("p");
+    paragraph.textContent = online
+        ? "RDRS is actively monitoring your system for suspicious activity."
+        : "File monitoring is currently stopped. Your system is not being actively monitored.";
+
+    message.append(heading, paragraph);
+
+    indicator.className = online
+        ? "live-indicator"
+        : "live-indicator offline-indicator";
+
+    indicator.replaceChildren();
+
+    const dot = document.createElement("span");
+    indicator.append(dot, document.createTextNode(online ? " LIVE" : " OFFLINE"));
+}
+
+function updateRecentEvents(events) {
+    const body = document.getElementById("recent-events-body");
+    if (!body) return;
+
+    body.replaceChildren();
+
+    if (!Array.isArray(events) || events.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+
+        const empty = document.createElement("div");
+        empty.className = "no-events";
+
+        const icon = document.createElement("div");
+        icon.className = "no-events-icon";
+        icon.textContent = "✓";
+
+        const heading = document.createElement("h3");
+        heading.textContent = "No Recent Events";
+
+        const paragraph = document.createElement("p");
+        paragraph.textContent = "Security events will appear here when detected.";
+
+        empty.append(icon, heading, paragraph);
+        cell.append(empty);
+        row.append(cell);
+        body.append(row);
+        return;
+    }
+
+    events.forEach(function(event) {
+        const row = document.createElement("tr");
+        const risk = String(event.risk_level || "NORMAL").toLowerCase();
+
+        const idCell = document.createElement("td");
+        idCell.textContent = "#" + String(event.id ?? "");
+
+        const timeCell = document.createElement("td");
+        timeCell.textContent = String(event.timestamp || "—");
+
+        const typeCell = document.createElement("td");
+        typeCell.className = "event-type";
+        typeCell.textContent = String(event.event_type || "Unknown");
+
+        const fileCell = document.createElement("td");
+        fileCell.className = "event-file";
+        fileCell.textContent = String(event.file_path || "—");
+        fileCell.title = String(event.file_path || "");
+
+        const scoreCell = document.createElement("td");
+        scoreCell.className = "score-value";
+        scoreCell.textContent = String(event.score ?? 0);
+
+        const riskCell = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = "risk-badge risk-" + risk;
+        badge.textContent = String(event.risk_level || "NORMAL");
+        riskCell.append(badge);
+
+        row.append(idCell, timeCell, typeCell, fileCell, scoreCell, riskCell);
+        body.append(row);
+    });
+}
+
+function updateThreatChart(events) {
+    const chart = document.getElementById("threat-chart");
+    if (!chart) return;
+
+    chart.replaceChildren();
+
+    if (!Array.isArray(events) || events.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "no-events";
+
+        const icon = document.createElement("div");
+        icon.className = "no-events-icon";
+        icon.textContent = "◌";
+
+        const heading = document.createElement("h3");
+        heading.textContent = "No Threat Data";
+
+        const paragraph = document.createElement("p");
+        paragraph.textContent = "Threat activity will appear here when events are detected.";
+
+        empty.append(icon, heading, paragraph);
+        chart.append(empty);
+        return;
+    }
+
+    events.slice(0, 10).forEach(function(event) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "chart-bar-wrapper";
+
+        const score = Math.max(0, Number(event.score) || 0);
+
+        const count = document.createElement("span");
+        count.className = "chart-count";
+        count.textContent = String(score);
+
+        const bar = document.createElement("div");
+        bar.className = "chart-bar";
+        bar.style.height = Math.min(score * 8, 100) + "%";
+        bar.title = String(event.event_type || "Event") + ": " + score;
+
+        const label = document.createElement("span");
+        label.className = "chart-label";
+        label.textContent = String(event.event_type || "Event").substring(0, 6);
+
+        wrapper.append(count, bar, label);
+        chart.append(wrapper);
+    });
+}
+
+
+
+
+document.getElementById("refresh-dashboard")?.addEventListener("click", function() {
+    updateDashboard();
+});
+
+updateDashboard();
+setInterval(updateDashboard, 5000);
+</script>
+</body>
+</html>
+```

@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>RDRS | Scan Results</title>
+
+    <link rel="stylesheet"
+          href="/static/css/dashboard.css">
+
+    <style>
+
+        /* ==================================================
+           PAGE
+        ================================================== */
+
+        .scan-page {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+
+        /* ==================================================
+           SCAN HEADER
+        ================================================== */
+
+        .scan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .scan-header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #f1f5f9;
+        }
+
+        .scan-header p {
+            margin-top: 6px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+
+        /* ==================================================
+           BUTTON
+        ================================================== */
+
+        .scan-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 11px 18px;
+
+            border-radius: 8px;
+
+            background: #2563eb;
+            color: white;
+
+            text-decoration: none;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            transition: 0.2s ease;
+        }
+
+        .scan-button:hover {
+            background: #1d4ed8;
+        }
+
+
+        /* ==================================================
+           SUMMARY GRID
+        ================================================== */
+
+        .scan-summary {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 18px;
+
+            margin-bottom: 25px;
+        }
+
+        .scan-card {
+            background: rgba(15, 23, 42, 0.75);
+
+            border: 1px solid
+                rgba(148, 163, 184, 0.12);
+
+            border-radius: 12px;
+
+            padding: 20px;
+        }
+
+        .scan-card-label {
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .scan-card-value {
+            margin-top: 8px;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            color: #f1f5f9;
+        }
+
+
+        /* ==================================================
+           RISK
+        ================================================== */
+
+        .risk-normal {
+            color: #22c55e;
+        }
+
+        .risk-low {
+            color: #facc15;
+        }
+
+        .risk-medium {
+            color: #fb923c;
+        }
+
+        .risk-high {
+            color: #f87171;
+        }
+
+
+        /* ==================================================
+           PANEL
+        ================================================== */
+
+        .scan-panel {
+            background: rgba(15, 23, 42, 0.75);
+
+            border: 1px solid
+                rgba(148, 163, 184, 0.12);
+
+            border-radius: 12px;
+
+            overflow: hidden;
+
+            margin-bottom: 25px;
+        }
+
+        .scan-panel-header {
+            padding: 20px;
+
+            border-bottom: 1px solid
+                rgba(148, 163, 184, 0.1);
+        }
+
+        .scan-panel-header h2 {
+            margin: 0;
+
+            font-size: 18px;
+
+            color: #f1f5f9;
+        }
+
+        .scan-panel-header p {
+            margin-top: 5px;
+
+            color: #94a3b8;
+
+            font-size: 13px;
+        }
+
+
+        /* ==================================================
+           FOLDER RESULT
+        ================================================== */
+
+        .folder-result {
+            padding: 20px;
+
+            border-bottom: 1px solid
+                rgba(148, 163, 184, 0.08);
+        }
+
+        .folder-result:last-child {
+            border-bottom: none;
+        }
+
+        .folder-name {
+            color: #38bdf8;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            word-break: break-all;
+        }
+
+        .folder-stats {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 20px;
+
+            margin-top: 15px;
+        }
+
+        .folder-stat {
+            color: #cbd5e1;
+
+            font-size: 13px;
+        }
+
+        .folder-stat span {
+            color: #94a3b8;
+
+            margin-right: 5px;
+        }
+
+
+        /* ==================================================
+           SUSPICIOUS FILES
+        ================================================== */
+
+        .suspicious-list {
+            margin-top: 18px;
+        }
+
+        .suspicious-title {
+            color: #f87171;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            margin-bottom: 10px;
+        }
+
+        .suspicious-file {
+            background: rgba(248, 113, 113, 0.06);
+
+            border: 1px solid
+                rgba(248, 113, 113, 0.12);
+
+            border-radius: 8px;
+
+            padding: 14px;
+
+            margin-bottom: 10px;
+        }
+
+        .suspicious-file-name {
+            color: #f1f5f9;
+
+            font-weight: 600;
+
+            font-size: 13px;
+        }
+
+        .suspicious-file-path {
+            color: #94a3b8;
+
+            font-size: 12px;
+
+            margin-top: 5px;
+
+            word-break: break-all;
+        }
+
+        .suspicious-file-info {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 15px;
+
+            margin-top: 10px;
+
+            color: #cbd5e1;
+
+            font-size: 12px;
+        }
+
+
+        /* ==================================================
+           EMPTY STATE
+        ================================================== */
+
+        .empty-state {
+            text-align: center;
+
+            padding: 50px 20px;
+
+            color: #94a3b8;
+        }
+
+        .empty-icon {
+            font-size: 35px;
+
+            margin-bottom: 10px;
+        }
+
+
+        /* ==================================================
+           ERROR
+        ================================================== */
+
+        .scan-error {
+            color: #f87171;
+
+            background: rgba(248, 113, 113, 0.06);
+
+            border: 1px solid
+                rgba(248, 113, 113, 0.12);
+
+            border-radius: 8px;
+
+            padding: 12px;
+
+            margin-top: 10px;
+
+            font-size: 12px;
+        }
+
+
+        /* ==================================================
+           RESPONSIVE
+        ================================================== */
+
+        @media (max-width: 900px) {
+
+            .scan-summary {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .scan-header {
+                align-items: flex-start;
+
+                flex-direction: column;
+            }
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            .scan-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .scan-header h1 {
+                font-size: 23px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="dashboard-layout">
+
+
+    <!-- ==================================================
+         SIDEBAR
+    ================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo-area">
+
+            <div class="dashboard-shield-logo">
+
+                <span class="shield-core"></span>
+
+                <span class="shield-line line-1"></span>
+
+                <span class="shield-line line-2"></span>
+
+                <span class="shield-line line-3"></span>
+
+            </div>
+
+            <div>
+
+                <h2>RDRS</h2>
+
+                <span>
+                    Security Center
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <a href="/dashboard"
+               class="nav-item">
+
+                <span>▣</span>
+                Dashboard
+
+            </a>
+
+
+            <a href="/events"
+               class="nav-item">
+
+                <span>◉</span>
+                Security Events
+
+            </a>
+
+
+            <a href="/threats"
+               class="nav-item">
+
+                <span>⚠</span>
+                Threats
+
+            </a>
+
+
+            <a href="/quarantine"
+               class="nav-item">
+
+                <span>▣</span>
+                Quarantine
+
+            </a>
+
+
+            <a href="/monitoring"
+               class="nav-item">
+
+                <span>◌</span>
+                Monitoring
+
+            </a>
+
+
+            <a href="/system-status"
+               class="nav-item">
+
+                <span>●</span>
+                System Status
+
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+
+                    <strong>
+                        System Online
+                    </strong>
+
+                    <small>
+                        Monitoring active
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <a href="/logout"
+               class="logout-button">
+
+                <span>↪</span>
+                Logout
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ==================================================
+         MAIN CONTENT
+    ================================================== -->
+
+    <main class="main-content">
+
+        <div class="scan-page">
+
+
+            <!-- HEADER -->
+
+            <div class="scan-header">
+
+                <div>
+
+                    <h1>
+                        Security Scan Results
+                    </h1>
+
+                    <p>
+                        Analysis of monitored folders
+                        and suspicious files.
+                    </p>
+
+                </div>
+
+
+                <a href="/scan"
+                   class="scan-button">
+
+                    ↻ Run New Scan
+
+                </a>
+
+            </div>
+
+
+            <!-- ==================================================
+                 SUMMARY
+            ================================================== -->
+
+            {% if scan_results %}
+
+            <section class="scan-summary">
+
+
+                <!-- FILES -->
+
+                <div class="scan-card">
+
+                    <div class="scan-card-label">
+                        Files Scanned
+                    </div>
+
+                    <div class="scan-card-value">
+                        {{ scan_results.total_files }}
+                    </div>
+
+                </div>
+
+
+                <!-- FOLDERS -->
+
+                <div class="scan-card">
+
+                    <div class="scan-card-label">
+                        Folders Scanned
+                    </div>
+
+                    <div class="scan-card-value">
+                        {{ scan_results.folders_scanned }}
+                    </div>
+
+                </div>
+
+
+                <!-- SUSPICIOUS -->
+
+                <div class="scan-card">
+
+                    <div class="scan-card-label">
+                        Suspicious Files
+                    </div>
+
+                    <div class="scan-card-value
+                        {% if scan_results.total_suspicious > 0 %}
+                            risk-high
+                        {% endif %}">
+
+                        {{ scan_results.total_suspicious }}
+
+                    </div>
+
+                </div>
+
+
+                <!-- RISK -->
+
+                <div class="scan-card">
+
+                    <div class="scan-card-label">
+                        Overall Risk
+                    </div>
+
+                    <div class="scan-card-value
+
+                        {% if scan_results.overall_risk == 'HIGH' %}
+                            risk-high
+
+                        {% elif scan_results.overall_risk == 'MEDIUM' %}
+                            risk-medium
+
+                        {% elif scan_results.overall_risk == 'LOW' %}
+                            risk-low
+
+                        {% else %}
+                            risk-normal
+                        {% endif %}">
+
+                        {{ scan_results.overall_risk }}
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================================
+                 FOLDER RESULTS
+            ================================================== -->
+
+            <section class="scan-panel">
+
+                <div class="scan-panel-header">
+
+                    <h2>
+                        Scan Details
+                    </h2>
+
+                    <p>
+                        Folder-by-folder security analysis.
+                    </p>
+
+                </div>
+
+
+                {% for result in scan_results.results %}
+
+                <div class="folder-result">
+
+
+                    <div class="folder-name">
+
+                        {{ result.folder_path }}
+
+                    </div>
+
+
+                    <div class="folder-stats">
+
+                        <div class="folder-stat">
+
+                            <span>
+                                Files:
+                            </span>
+
+                            {{ result.files_scanned }}
+
+                        </div>
+
+
+                        <div class="folder-stat">
+
+                            <span>
+                                Folders:
+                            </span>
+
+                            {{ result.folders_found }}
+
+                        </div>
+
+
+                        <div class="folder-stat">
+
+                            <span>
+                                Suspicious:
+                            </span>
+
+                            {{ result.suspicious_count }}
+
+                        </div>
+
+
+                        <div class="folder-stat">
+
+                            <span>
+                                Risk:
+                            </span>
+
+                            <strong class="
+
+                                {% if result.risk_level == 'HIGH' %}
+                                    risk-high
+
+                                {% elif result.risk_level == 'MEDIUM' %}
+                                    risk-medium
+
+                                {% elif result.risk_level == 'LOW' %}
+                                    risk-low
+
+                                {% else %}
+                                    risk-normal
+                                {% endif %}">
+
+                                {{ result.risk_level }}
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SUSPICIOUS FILES -->
+
+                    {% if result.suspicious_files %}
+
+                    <div class="suspicious-list">
+
+                        <div class="suspicious-title">
+
+                            ⚠ Suspicious Files Detected
+
+                        </div>
+
+
+                        {% for file in result.suspicious_files %}
+
+                        <div class="suspicious-file">
+
+                            <div class="suspicious-file-name">
+
+                                {{ file.file_name }}
+
+                            </div>
+
+
+                            <div class="suspicious-file-path">
+
+                                {{ file.file_path }}
+
+                            </div>
+
+
+                            <div class="suspicious-file-info">
+
+                                <span>
+                                    Extension:
+                                    {{ file.extension }}
+                                </span>
+
+                                <span>
+                                    Size:
+                                    {{ file.size }} bytes
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ERRORS -->
+
+                    {% if result.errors %}
+
+                    {% for error in result.errors %}
+
+                    <div class="scan-error">
+
+                        {{ error }}
+
+                    </div>
+
+                    {% endfor %}
+
+                    {% endif %}
+
+
+                </div>
+
+                {% endfor %}
+
+            </section>
+
+
+            {% else %}
+
+            <!-- ==================================================
+                 NO SCAN
+            ================================================== -->
+
+            <section class="scan-panel">
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        ◌
+                    </div>
+
+                    <h2>
+                        No Scan Results
+                    </h2>
+
+                    <p>
+                        Run a security scan to analyze
+                        your monitored folders.
+                    </p>
+
+                    <br>
+
+                    <a href="/scan"
+                       class="scan-button">
+
+                        Run Security Scan
+
+                    </a>
+
+                </div>
+
+            </section>
+
+            {% endif %}
+
+
+        </div>
+
+
+        <!-- FOOTER -->
+
+        <footer>
+
+            <span>
+                RDRS v1.0
+            </span>
+
+            <span>
+                Ransomware Detection &amp; Response System
+            </span>
+
+        </footer>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>
