@@ -491,10 +491,27 @@
 <!-- CONNECTED DEVICES -->
 <section class="panel devices-panel" id="connected-devices">
     <div class="panel-header">
-        <div>
-            <h2>Connected Devices</h2>
-            <p>Computers enrolled in your RDRS account</p>
-        </div>
+        
+<div>
+    <h2>Connected Devices</h2>
+    <p>Computers enrolled in your RDRS account</p>
+    <button
+        type="button"
+        id="enroll-device-button"
+        class="refresh-button"
+    >
+        + Enroll Device
+    </button>
+    <p id="enrollment-message" role="status"></p>
+    <div id="enrollment-code-container" hidden>
+        <p>One-time enrollment code (expires in 5 minutes):</p>
+        <code id="enrollment-code"></code>
+        <button type="button" id="copy-enrollment-code">
+            Copy Code
+        </button>
+    </div>
+</div>
+
         <span class="period">{{ devices|length }} Device(s)</span>
     </div>
 
@@ -880,9 +897,64 @@ document.getElementById("refresh-dashboard")?.addEventListener("click", function
     updateDashboard();
 });
 
+
+document.getElementById("enroll-device-button")?.addEventListener("click", async function () {
+    const button = this;
+    const message = document.getElementById("enrollment-message");
+    const container = document.getElementById("enrollment-code-container");
+    const codeElement = document.getElementById("enrollment-code");
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    button.disabled = true;
+    message.textContent = "Creating enrollment code...";
+    container.hidden = true;
+
+    try {
+        if (!csrfToken) {
+            throw new Error("CSRF token missing. Refresh the dashboard.");
+        }
+
+        const response = await fetch("/devices/enrollment", {
+            method: "POST",
+            headers: {
+                "X-CSRF-Token": csrfToken
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== "success") {
+            throw new Error(result.detail || "Could not create enrollment code.");
+        }
+
+        codeElement.textContent = result.enrollment_code;
+        container.hidden = false;
+        message.textContent = "Code created. It expires in 5 minutes.";
+    } catch (error) {
+        message.textContent = error.message || "Enrollment request failed.";
+    } finally {
+        button.disabled = false;
+    }
+});
+
+document.getElementById("copy-enrollment-code")?.addEventListener("click", async function () {
+    const code = document.getElementById("enrollment-code").textContent;
+    const message = document.getElementById("enrollment-message");
+
+    try {
+        await navigator.clipboard.writeText(code);
+        message.textContent = "Enrollment code copied.";
+    } catch {
+        message.textContent = "Copy failed. Select and copy the code manually.";
+    }
+});
+
 updateDashboard();
 setInterval(updateDashboard, 5000);
 </script>
+</body>
+</html>
+
 </body>
 </html>
 ```
