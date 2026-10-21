@@ -42,12 +42,19 @@ import os
 
 DATABASE_URL = "sqlite:///rdrs.db"
 
+
 engine = create_engine(
     DATABASE_URL,
     connect_args={
         "check_same_thread": False
     }
 )
+from pathlib import Path
+
+print("[RDRS DATABASE CHECK]")
+print("Database URL:", engine.url.render_as_string(hide_password=True))
+print("Database file:", Path("rdrs.db").resolve())
+print("Database exists:", Path("rdrs.db").exists())
 
 Base = declarative_base()
 
