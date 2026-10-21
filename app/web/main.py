@@ -502,10 +502,22 @@ def monitoring_page(request: Request):
 # ==================================================
 # ADD MONITORED FOLDER
 # ==================================================
+
 @app.get("/monitoring/select-folder")
 def select_folder(request: Request):
+    # Require login
     if not is_logged_in(request):
         return login_redirect()
+
+    # Desktop folder picker is not available on Render
+    if tk is None or filedialog is None:
+        raise HTTPException(
+            status_code=501,
+            detail=(
+                "Desktop folder picker is unavailable on Render. "
+                "Run the RDRS agent on the device you want to monitor."
+            ),
+        )
 
     folder_path = None
     root = None
@@ -533,7 +545,8 @@ def select_folder(request: Request):
     if not folder_path:
         print("[MONITORING] Folder selection cancelled.")
         return RedirectResponse(
-            url="/monitoring", status_code=303
+            url="/monitoring",
+            status_code=303,
         )
 
     folder_path = os.path.abspath(folder_path)
@@ -545,8 +558,6 @@ def select_folder(request: Request):
         folder_name = folder_path
 
     try:
-        # Detect whether the existing database function accepts
-        # user_id. This prevents passing an unsupported argument.
         parameters = inspect.signature(
             add_monitored_folder
         ).parameters
@@ -558,8 +569,6 @@ def select_folder(request: Request):
                 user_id=request.session["user_id"],
             )
         else:
-            # Legacy fallback: saves using the old signature.
-            # This does NOT establish user ownership.
             add_monitored_folder(
                 folder_path,
                 folder_name,
@@ -579,7 +588,8 @@ def select_folder(request: Request):
         print("=" * 60)
 
     return RedirectResponse(
-        url="/monitoring", status_code=303
+        url="/monitoring",
+        status_code=303,
     )
 
 
