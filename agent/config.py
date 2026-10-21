@@ -12,6 +12,6 @@ DEVICE_TOKEN_FILE = os.path.join(
     "device_token.txt"
 )
 
-SERVER_URL = "http://127.0.0.1:8001"
+SERVER_URL = "https://rdrs-ransomware-detection-response.onrender.com"
 
 AGENT_VERSION = "1.0.0"

@@ -20,6 +20,7 @@ import traceback
 import secrets
 import hmac
 from fastapi import HTTPException
+from server.api.device import router as devices_router
 
 from app.database.database import (
     create_device_enrollment,
@@ -67,6 +68,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+app.include_router(devices_router)
 
 
 # ==================================================
