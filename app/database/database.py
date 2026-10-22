@@ -1,5 +1,6 @@
 from sqlalchemy import (
     create_engine,
+    inspect,
     Column,
     Integer,
     String,
@@ -19,6 +20,7 @@ import hashlib
 
 from sqlalchemy import (
     create_engine,
+    inspect,
     Column,
     Integer,
     String,
@@ -33,28 +35,41 @@ from sqlalchemy.orm import (
 )
 
 from datetime import datetime
-import os
-
 
 # ==================================================
 # DATABASE CONFIGURATION
 # ==================================================
 
-DATABASE_URL = "sqlite:///rdrs.db"
 
-
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={
-        "check_same_thread": False
-    }
-)
+import os
 from pathlib import Path
 
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///rdrs.db")
+
+# Render PostgreSQL URLs ko psycopg 3 ke format mein normalize karo.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
+if DATABASE_URL.startswith("sqlite:///"):
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True
+    )
+
 print("[RDRS DATABASE CHECK]")
-print("Database URL:", engine.url.render_as_string(hide_password=True))
-print("Database file:", Path("rdrs.db").resolve())
-print("Database exists:", Path("rdrs.db").exists())
+print("Database type:", engine.dialect.name)
+
+if engine.dialect.name == "sqlite":
+    print("Database file:", Path("rdrs.db").resolve())
+    print("Database exists:", Path("rdrs.db").exists())
+
 
 Base = declarative_base()
 
@@ -280,116 +295,79 @@ Base.metadata.create_all(
 # DATABASE MIGRATION
 # ==================================================
 
-def migrate_security_events_table():
 
+# ==================================================
+# DATABASE MIGRATION
+# ==================================================
+
+def get_existing_columns(connection, table_name):
+    """Return column names for SQLite or PostgreSQL."""
+    inspector = inspect(connection)
+    return {
+        column["name"]
+        for column in inspector.get_columns(table_name)
+    }
+
+
+def migrate_security_events_table():
+    """Add missing security-event columns without deleting data."""
     required_columns = {
         "entropy": "REAL",
         "process_name": "TEXT",
         "process_pid": "INTEGER",
         "process_exe": "TEXT",
         "process_cpu": "REAL",
-        "process_memory": "REAL"
+        "process_memory": "REAL",
     }
 
-    with engine.connect() as connection:
-
-        result = connection.execute(
-            text(
-                "PRAGMA table_info(security_events)"
-            )
+    with engine.begin() as connection:
+        existing_columns = get_existing_columns(
+            connection, "security_events"
         )
 
-        existing_columns = {
-            row[1]
-            for row in result
-        }
-
         for column_name, column_type in required_columns.items():
-
             if column_name not in existing_columns:
-
                 connection.execute(
                     text(
-                        f"""
-                        ALTER TABLE security_events
-                        ADD COLUMN {column_name}
-                        {column_type}
-                        """
+                        f"ALTER TABLE security_events "
+                        f"ADD COLUMN {column_name} {column_type}"
                     )
                 )
 
-        connection.commit()
-
-
-# Run security event migration automatically
-migrate_security_events_table()
-
-
-# ==================================================
-# DEVICE TOKEN MIGRATION
-# ==================================================
 
 def migrate_devices_table():
-
+    """Add the device token column if it is missing."""
     required_columns = {
-        "device_token": "TEXT"
+        "device_token": "TEXT",
     }
 
-    with engine.connect() as connection:
-
-        result = connection.execute(
-            text(
-                "PRAGMA table_info(devices)"
-            )
+    with engine.begin() as connection:
+        existing_columns = get_existing_columns(
+            connection, "devices"
         )
 
-        existing_columns = {
-            row[1]
-            for row in result
-        }
-
         for column_name, column_type in required_columns.items():
-
             if column_name not in existing_columns:
-
                 connection.execute(
                     text(
-                        f"""
-                        ALTER TABLE devices
-                        ADD COLUMN {column_name}
-                        {column_type}
-                        """
+                        f"ALTER TABLE devices "
+                        f"ADD COLUMN {column_name} {column_type}"
                     )
                 )
 
-        connection.commit()
-
-
-# Run device migration automatically
-migrate_devices_table()
-
-
-# ==================================================
-# USER EMAIL MIGRATION
-# ==================================================
 
 def migrate_users_table():
-    """Safely add the email column to existing users tables."""
-    with engine.connect() as connection:
-        result = connection.execute(
-            text("PRAGMA table_info(users)")
+    """Safely add email support to existing users tables."""
+    with engine.begin() as connection:
+        existing_columns = get_existing_columns(
+            connection, "users"
         )
-
-        existing_columns = {
-            row[1] for row in result
-        }
 
         if "email" not in existing_columns:
             connection.execute(
                 text("ALTER TABLE users ADD COLUMN email TEXT")
             )
 
-        # SQLite allows multiple NULL values in a unique index.
         connection.execute(
             text(
                 "CREATE UNIQUE INDEX IF NOT EXISTS "
@@ -397,11 +375,15 @@ def migrate_users_table():
             )
         )
 
-        connection.commit()
 
-
-# Run user email migration automatically
+# Run migrations after the helper and functions are defined.
+migrate_security_events_table()
+migrate_devices_table()
 migrate_users_table()
+
+
+# ==================================================
+
 
 # ==================================================
 # SAVE SECURITY EVENT
@@ -1155,9 +1137,7 @@ def migrate_user_isolation_columns():
 
     with engine.begin() as connection:
         for table in tables:
-            result = connection.execute(text(f"PRAGMA table_info({table})"))
-            existing_columns = {row[1] for row in result}
-
+            existing_columns = get_existing_columns(connection, table)
             if "user_id" not in existing_columns:
                 connection.execute(
                     text(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER")

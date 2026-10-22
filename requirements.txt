@@ -10,3 +10,4 @@ psutil
 pydantic
 requests
 bcrypt
+psycopg[binary]
