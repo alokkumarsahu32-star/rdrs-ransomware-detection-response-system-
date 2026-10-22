@@ -3,6 +3,8 @@ import socket
 import requests
 import os
 import time
+import threading
+from tkinter import Tk, filedialog
 
 from agent.config import (
     SERVER_URL,
@@ -138,7 +140,7 @@ def send_heartbeat(device_id, device_token):
         },
         timeout=10
     )
-
+    print("Heartbeat HTTP Status:", response.status_code, "| Response:", response.text[:500])
     response.raise_for_status()
 
     data = response.json()
@@ -150,6 +152,82 @@ def send_heartbeat(device_id, device_token):
         data.get("last_seen")
     )
 
+
+# ==================================================
+# LOCAL FOLDER SCANNING AND RESULT UPLOAD
+# ==================================================
+
+from tkinter import Tk, filedialog
+
+SUSPICIOUS_EXTENSIONS = {
+    ".encrypted", ".enc", ".locked", ".crypt",
+    ".ransom", ".wncry", ".lockbit"
+}
+
+
+def select_folder():
+    root = Tk()
+    root.withdraw()
+
+    try:
+        root.attributes("-topmost", True)
+
+        folder_path = filedialog.askdirectory(
+            title="Select a folder to scan with RDRS"
+        )
+        return folder_path
+    finally:
+        root.destroy()
+
+
+def scan_local_folder(folder_path):
+    result = {
+        "folder_path": os.path.abspath(folder_path),
+        "files_scanned": 0,
+        "suspicious_files": [],
+        "errors": []
+    }
+
+    for root, directories, files in os.walk(folder_path):
+        # Skip folders that cannot be accessed.
+        for file_name in files:
+            file_path = os.path.join(root, file_name)
+
+            try:
+                if not os.path.isfile(file_path):
+                    continue
+
+                result["files_scanned"] += 1
+                extension = os.path.splitext(file_name)[1].lower()
+
+                if extension in SUSPICIOUS_EXTENSIONS:
+                    result["suspicious_files"].append({
+                        "file_path": file_path,
+                        "score": 5,
+                        "risk_level": "LOW"
+                    })
+
+            except OSError as error:
+                result["errors"].append(str(error))
+
+    return result
+
+
+def upload_scan_results(device_id, device_token, scan_result):
+    response = requests.post(
+        f"{SERVER_URL}/api/devices/scan-results",
+        params={"device_id": device_id},
+        headers={
+            "Authorization": f"Bearer {device_token}"
+        },
+        json=scan_result,
+        timeout=60
+    )
+
+    response.raise_for_status()
+    return response.json()
+
+
 # ==================================================
 # MAIN AGENT
 # ==================================================
@@ -159,18 +237,41 @@ if __name__ == "__main__":
 
     device_id, device_token = register_agent()
 
-    print("Starting heartbeat...")
+    print("\nSelect a folder to scan.")
+    selected_folder = select_folder()
 
-    while True:
+    if selected_folder:
+        print("\nScanning folder:", selected_folder)
+
+        scan_result = scan_local_folder(selected_folder)
+
+        print("Files scanned:", scan_result["files_scanned"])
+        print(
+            "Suspicious files:",
+            len(scan_result["suspicious_files"])
+        )
 
         try:
-            send_heartbeat(device_id, device_token)
+            upload_result = upload_scan_results(
+                device_id,
+                device_token,
+                scan_result
+            )
+            print("Upload status:", upload_result.get("status"))
+            print("Server response:", upload_result)
 
         except requests.RequestException as error:
+            print("Scan results upload failed:", error)
 
-            print(
-                "Heartbeat failed:",
-                error
-            )
+    else:
+        print("No folder selected. Scan skipped.")
+
+    print("\nStarting heartbeat...")
+
+    while True:
+        try:
+            send_heartbeat(device_id, device_token)
+        except requests.RequestException as error:
+            print("Heartbeat failed:", error)
 
         time.sleep(30)

@@ -5,13 +5,16 @@ import platform
 import uuid
 from datetime import datetime
 
+
 from app.database.database import (
     register_device,
     consume_device_enrollment,
     update_device_heartbeat,
+    save_scan_finding_once,
     SessionLocal,
     Device
 )
+
 
 router = APIRouter(
     prefix="/api/devices",
@@ -257,4 +260,80 @@ def get_user_devices(user_id: int):
 
     finally:
 
+        db.close()
+
+
+# ==================================================
+# UPLOAD LOCAL SCAN RESULTS
+# ==================================================
+
+from pydantic import BaseModel, Field
+from typing import List
+
+
+class ScanFinding(BaseModel):
+    file_path: str = Field(min_length=1, max_length=4096)
+    score: int = Field(default=5, ge=0, le=100)
+    risk_level: str = "LOW"
+
+
+class ScanResultsRequest(BaseModel):
+    folder_path: str = Field(min_length=1, max_length=4096)
+    files_scanned: int = Field(default=0, ge=0)
+    suspicious_files: List[ScanFinding] = Field(default_factory=list, max_length=500)
+
+
+@router.post("/scan-results")
+def upload_scan_results(
+    request: ScanResultsRequest,
+    device_id: str,
+    authorization: str = Header(...)
+):
+    db = SessionLocal()
+
+    try:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authorization header"
+            )
+
+        device_token = authorization.replace("Bearer ", "", 1).strip()
+
+        device = db.query(Device).filter(
+            Device.device_id == device_id
+        ).first()
+
+        if not device or device.device_token != device_token:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid device credentials"
+            )
+
+        if device.user_id is None:
+            raise HTTPException(
+                status_code=403,
+                detail="Device is not linked to a user"
+            )
+        processed_count = 0
+
+        for finding in request.suspicious_files:
+            save_scan_finding_once(
+                file_path=finding.file_path,
+                score=finding.score,
+                risk_level=finding.risk_level,
+                user_id=device.user_id
+            )
+            processed_count += 1
+
+        return {
+            "status": "success",
+            "device_id": device.device_id,
+            "files_scanned": request.files_scanned,
+            "suspicious_count": len(request.suspicious_files),
+            "findings_processed": processed_count,
+            "message": "Scan results processed"
+        }
+
+    finally:
         db.close()
