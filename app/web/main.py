@@ -26,6 +26,7 @@ from app.database.database import (
     create_device_enrollment,
     get_devices_by_user,
     get_total_events,
+    get_total_scanned_files,
     get_high_risk_events,
     get_suspicious_events,
     get_quarantined_events,
@@ -69,6 +70,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(devices_router)
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
 
 
 # ==================================================
@@ -320,6 +325,7 @@ def register(
 # ==================================================
 # DASHBOARD
 # ==================================================
+
 @app.get("/dashboard")
 def dashboard(request: Request):
     if not is_logged_in(request):
@@ -330,6 +336,7 @@ def dashboard(request: Request):
     health = system_status.get_system_health()
 
     total_events = get_total_events(user_id=user_id)
+    total_scanned_files = get_total_scanned_files(user_id=user_id)
     high_risk_events = get_high_risk_events(user_id=user_id)
     suspicious_events = get_suspicious_events(user_id=user_id)
     quarantined_events = get_quarantined_events(user_id=user_id)
@@ -343,6 +350,7 @@ def dashboard(request: Request):
             "csrf_token": get_csrf_token(request),
             "devices": devices,
             "total_events": total_events,
+            "total_scanned_files": total_scanned_files,
             "high_risk_events": high_risk_events,
             "suspicious_events": suspicious_events,
             "quarantined_events": quarantined_events,
@@ -747,6 +755,7 @@ def dashboard_api(request: Request):
     return {
         "authenticated": True,
         "total_events": get_total_events(user_id=user_id),
+        "total_scanned_files": get_total_scanned_files(user_id=user_id),
         "high_risk_events": get_high_risk_events(user_id=user_id),
         "suspicious_events": get_suspicious_events(user_id=user_id),
         "quarantined_events": get_quarantined_events(
