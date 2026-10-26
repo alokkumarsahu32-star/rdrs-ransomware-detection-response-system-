@@ -282,6 +282,24 @@ class DeviceEnrollment(Base):
     used_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.now)
 
+
+# ==================================================
+# SCAN FILE RESULT TABLE
+# ==================================================
+
+class ScanFileResult(Base):
+    __tablename__ = "scan_file_results"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    device_id = Column(String, nullable=False, index=True)
+    scan_id = Column(String, nullable=False, index=True)
+    folder_path = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    risk_level = Column(String, default="NORMAL", nullable=False)
+    score = Column(Integer, default=0, nullable=False)
+    timestamp = Column(DateTime, default=datetime.now, nullable=False)
+
 # ==================================================
 # CREATE DATABASE TABLES
 # ==================================================
@@ -433,13 +451,15 @@ def save_event(
     finally:
         db.close()
         
-def save_scan_finding_once(file_path, score, risk_level, user_id):
-    """Save a scan finding only once per user and normalized file path."""
+def save_scan_finding_once(file_path, score, risk_level, user_id, db=None):
+    """Save a scan finding once per user and normalized file path."""
     normalized_path = os.path.normcase(
         os.path.abspath(str(file_path))
     )
 
-    db = SessionLocal()
+    owns_session = db is None
+    if owns_session:
+        db = SessionLocal()
 
     try:
         existing_events = (
@@ -473,16 +493,22 @@ def save_scan_finding_once(file_path, score, risk_level, user_id):
         )
 
         db.add(event)
-        db.commit()
-        db.refresh(event)
+
+        # Commit only when this function created its own session.
+        if owns_session:
+            db.commit()
+            db.refresh(event)
+
         return event
 
     except Exception:
-        db.rollback()
+        if owns_session:
+            db.rollback()
         raise
 
     finally:
-        db.close()
+        if owns_session:
+            db.close()
 
 
 
@@ -593,7 +619,19 @@ def get_total_events(user_id=None):
     finally:
         db.close()
 
+def get_total_scanned_files(user_id=None):
+    db = SessionLocal()
+    try:
+        query = db.query(ScanFileResult)
 
+        if user_id is not None:
+            query = query.filter(
+                ScanFileResult.user_id == user_id
+            )
+
+        return query.count()
+    finally:
+        db.close()
 # ==================================================
 # GET HIGH RISK EVENTS
 # ==================================================

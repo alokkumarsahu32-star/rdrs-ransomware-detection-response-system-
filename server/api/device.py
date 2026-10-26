@@ -12,7 +12,8 @@ from app.database.database import (
     update_device_heartbeat,
     save_scan_finding_once,
     SessionLocal,
-    Device
+    Device,
+    ScanFileResult
 )
 
 
@@ -273,15 +274,22 @@ from typing import List
 
 class ScanFinding(BaseModel):
     file_path: str = Field(min_length=1, max_length=4096)
-    score: int = Field(default=5, ge=0, le=100)
-    risk_level: str = "LOW"
+    score: int = Field(default=0, ge=0, le=100)
+    risk_level: str = "NORMAL"
 
 
 class ScanResultsRequest(BaseModel):
     folder_path: str = Field(min_length=1, max_length=4096)
     files_scanned: int = Field(default=0, ge=0)
-    suspicious_files: List[ScanFinding] = Field(default_factory=list, max_length=500)
-
+    suspicious_files: List[ScanFinding] = Field(
+        default_factory=list,
+        max_length=500
+    )
+    scan_id: str = Field(default="", max_length=100)
+    file_results: List[ScanFinding] = Field(
+        default_factory=list,
+        max_length=10000
+    )
 
 @router.post("/scan-results")
 def upload_scan_results(
@@ -315,25 +323,55 @@ def upload_scan_results(
                 status_code=403,
                 detail="Device is not linked to a user"
             )
-        processed_count = 0
 
+        processed_count = 0
+        saved_results = 0
+        scan_id = request.scan_id.strip() or str(uuid.uuid4())
+
+        # Save each scanned file result
+        for result in request.file_results:
+            db.add(
+                ScanFileResult(
+                    user_id=device.user_id,
+                    device_id=device.device_id,
+                    scan_id=scan_id,
+                    folder_path=request.folder_path,
+                    file_path=result.file_path,
+                    risk_level=result.risk_level.upper(),
+                    score=result.score,
+                )
+            )
+            saved_results += 1
+
+                 # Preserve existing suspicious-event logging
         for finding in request.suspicious_files:
             save_scan_finding_once(
                 file_path=finding.file_path,
                 score=finding.score,
                 risk_level=finding.risk_level,
-                user_id=device.user_id
+                user_id=device.user_id,
+                db=db,
             )
             processed_count += 1
 
+        db.commit()
+
+
         return {
-            "status": "success",
-            "device_id": device.device_id,
-            "files_scanned": request.files_scanned,
-            "suspicious_count": len(request.suspicious_files),
-            "findings_processed": processed_count,
-            "message": "Scan results processed"
+              "status": "success",
+             "device_id": device.device_id,
+              "scan_id": scan_id,
+              "files_scanned": request.files_scanned,
+              "results_received": len(request.file_results),
+              "results_saved": saved_results,
+              "suspicious_count": len(request.suspicious_files),
+               "findings_processed": processed_count,
+              "message": "Scan results processed"
         }
+
+    except Exception:
+        db.rollback()
+        raise
 
     finally:
         db.close()

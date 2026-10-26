@@ -366,6 +366,15 @@
             </div>
 
             <div class="stat-card">
+                <div class="stat-icon blue">▤</div>
+                <div>
+                    <span>Scanned Files</span>
+                    <h2 id="scanned-files-count">{{ total_scanned_files }}</h2>
+                    <small>Files scanned by RDRS Agent</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
                 <div class="stat-icon red">⚠</div>
                 <div>
                     <span>High Risk</span>
@@ -662,6 +671,7 @@ async function updateDashboard() {
         }
 
         setText("total-events-count", data.total_events);
+        setText("scanned-files-count", data.total_scanned_files);
         setText("high-risk-count", data.high_risk_events);
         setText("threats-count", data.suspicious_events);
         setText("quarantined-count", data.quarantined_events);
@@ -952,9 +962,7 @@ document.getElementById("copy-enrollment-code")?.addEventListener("click", async
 updateDashboard();
 setInterval(updateDashboard, 5000);
 </script>
-</body>
-</html>
 
 </body>
+
 </html>
-```

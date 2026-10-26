@@ -2,6 +2,7 @@ import platform
 import socket
 import requests
 import os
+import uuid
 import time
 import threading
 from tkinter import Tk, filedialog
@@ -180,16 +181,20 @@ def select_folder():
         root.destroy()
 
 
+
 def scan_local_folder(folder_path):
+    scan_id = str(uuid.uuid4())
+
     result = {
+        "scan_id": scan_id,
         "folder_path": os.path.abspath(folder_path),
         "files_scanned": 0,
         "suspicious_files": [],
+        "file_results": [],
         "errors": []
     }
 
     for root, directories, files in os.walk(folder_path):
-        # Skip folders that cannot be accessed.
         for file_name in files:
             file_path = os.path.join(root, file_name)
 
@@ -201,16 +206,25 @@ def scan_local_folder(folder_path):
                 extension = os.path.splitext(file_name)[1].lower()
 
                 if extension in SUSPICIOUS_EXTENSIONS:
-                    result["suspicious_files"].append({
+                    finding = {
                         "file_path": file_path,
                         "score": 5,
                         "risk_level": "LOW"
+                    }
+                    result["suspicious_files"].append(finding)
+                    result["file_results"].append(finding.copy())
+                else:
+                    result["file_results"].append({
+                        "file_path": file_path,
+                        "score": 0,
+                        "risk_level": "NORMAL"
                     })
 
             except OSError as error:
                 result["errors"].append(str(error))
 
     return result
+
 
 
 def upload_scan_results(device_id, device_token, scan_result):
@@ -232,9 +246,58 @@ def upload_scan_results(device_id, device_token, scan_result):
 # MAIN AGENT
 # ==================================================
 
+# ==================================================
+# MAIN AGENT
+# ==================================================
+
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="RDRS Windows Agent")
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="Scan a local folder without enrollment, upload, or heartbeat.",
+    )
+    parser.add_argument(
+        "--folder",
+        type=str,
+        help="Folder to scan in self-test mode. If omitted, a folder picker opens.",
+    )
+    args = parser.parse_args()
+
     print("RDRS Agent started")
 
+    if args.self_test:
+        # Local-only mode: do not call register_agent, upload, or heartbeat.
+        selected_folder = args.folder or select_folder()
+
+        if not selected_folder:
+            print("No folder selected. Self-test skipped.")
+            raise SystemExit(1)
+
+        if not os.path.isdir(selected_folder):
+            print("Error: Folder does not exist.")
+            raise SystemExit(1)
+
+        print("\nLOCAL SELF-TEST MODE — no server requests will be made.")
+        print("Scanning folder:", os.path.abspath(selected_folder))
+
+        scan_result = scan_local_folder(selected_folder)
+
+        print(json.dumps({
+            "mode": "local-only",
+            "scan_id": scan_result["scan_id"],
+            "files_scanned": scan_result["files_scanned"],
+            "suspicious_count": len(scan_result["suspicious_files"]),
+            "file_results": scan_result["file_results"],
+            "errors": scan_result["errors"],
+        }, indent=2))
+
+        raise SystemExit(0)
+
+    # Normal mode: existing live-server workflow.
     device_id, device_token = register_agent()
 
     print("\nSelect a folder to scan.")
@@ -242,14 +305,10 @@ if __name__ == "__main__":
 
     if selected_folder:
         print("\nScanning folder:", selected_folder)
-
         scan_result = scan_local_folder(selected_folder)
 
         print("Files scanned:", scan_result["files_scanned"])
-        print(
-            "Suspicious files:",
-            len(scan_result["suspicious_files"])
-        )
+        print("Suspicious files:", len(scan_result["suspicious_files"]))
 
         try:
             upload_result = upload_scan_results(
@@ -259,10 +318,8 @@ if __name__ == "__main__":
             )
             print("Upload status:", upload_result.get("status"))
             print("Server response:", upload_result)
-
         except requests.RequestException as error:
             print("Scan results upload failed:", error)
-
     else:
         print("No folder selected. Scan skipped.")
 

@@ -27,3 +27,7 @@ agent/device_token.txt
 agent/device_id.txt
 *.backup
 *_backup_*.html
+# PyInstaller build artifacts
+/build/
+/dist/
+/RDRS-Agent.spec
