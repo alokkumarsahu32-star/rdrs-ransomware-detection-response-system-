@@ -11,6 +11,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0"
 >
+<meta name="csrf-token" content="{{ csrf_token }}">
 
 <title>System Monitoring | RDRS</title>
 
@@ -1469,6 +1470,94 @@
 ```
 
 </div>
+<script>
+document.querySelectorAll(".add-folder-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+        // Localhost par purana folder picker hi chalega.
+        if (!window.location.hostname.endsWith("onrender.com")) {
+            return;
+        }
+
+        event.preventDefault();
+
+        let message = document.getElementById("folder-selection-message");
+
+        if (!message) {
+            message = document.createElement("p");
+            message.id = "folder-selection-message";
+            message.setAttribute("role", "status");
+            button.insertAdjacentElement("afterend", message);
+        }
+
+        const csrfToken = document.querySelector(
+            'meta[name="csrf-token"]'
+        )?.content;
+
+        button.style.pointerEvents = "none";
+        message.textContent = "Connected computer check kar rahe hain...";
+
+        try {
+            if (!csrfToken) {
+                throw new Error("Security token missing. Page refresh karo.");
+            }
+
+            const response = await fetch("/api/my-devices", {
+                credentials: "same-origin",
+                headers: { "Accept": "application/json" }
+            });
+
+            if (!response.ok) {
+                throw new Error("Devices load nahi hue. Page refresh karke try karo.");
+            }
+
+            const data = await response.json();
+            const devices = Array.isArray(data) ? data : (data.devices || []);
+
+            if (!devices.length) {
+                throw new Error("Pehle computer par RDRS Agent enroll aur run karo.");
+            }
+
+            const device = devices.find(d =>
+                ["ONLINE", "online"].includes(d.status) ||
+                d.is_online === true
+            ) || devices[0];
+
+            const deviceId = device.device_id || device.id;
+
+            if (!deviceId) {
+                throw new Error("Device ID nahi mila.");
+            }
+
+            message.textContent = "Folder selection request bhej rahe hain...";
+
+            const commandResponse = await fetch(
+                `/devices/${encodeURIComponent(deviceId)}/select-folder`,
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "X-CSRF-Token": csrfToken,
+                        "Accept": "application/json"
+                    }
+                }
+            );
+
+            const result = await commandResponse.json();
+
+            if (!commandResponse.ok) {
+                throw new Error(result.detail || "Request bheji nahi ja saki.");
+            }
+
+            message.textContent =
+                "Request sent! Apne computer par RDRS Agent chalu rakho.";
+        } catch (error) {
+            message.textContent = error.message || "Folder selection failed.";
+        } finally {
+            button.style.pointerEvents = "";
+        }
+    });
+});
+</script>
 
 </body>
 

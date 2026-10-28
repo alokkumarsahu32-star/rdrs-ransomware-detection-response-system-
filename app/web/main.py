@@ -592,6 +592,7 @@ def monitoring_page(request: Request):
         name="monitoring.html",
         context={
             "username": request.session.get("username"),
+            "csrf_token": get_csrf_token(request),
             "detection_status": health["detection_status"],
             "response_status": health["response_status"],
             "database_status": health["database_status"],
