@@ -31,3 +31,6 @@ agent/device_id.txt
 /build/
 /dist/
 /RDRS-Agent.spec
+# Installer executable and build output
+/installer/*.exe
+*.iss

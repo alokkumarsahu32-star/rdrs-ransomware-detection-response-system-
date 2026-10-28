@@ -511,6 +511,16 @@
     >
         + Enroll Device
     </button>
+
+<button
+    type="button"
+    id="select-folder-scan-button"
+    class="refresh-button"
+>
+    Select Folder & Scan
+</button>
+
+<p id="folder-scan-message" role="status"></p>
     <p id="enrollment-message" role="status"></p>
     <div id="enrollment-code-container" hidden>
         <p>One-time enrollment code (expires in 5 minutes):</p>
@@ -956,6 +966,70 @@ document.getElementById("copy-enrollment-code")?.addEventListener("click", async
         message.textContent = "Enrollment code copied.";
     } catch {
         message.textContent = "Copy failed. Select and copy the code manually.";
+    }
+});
+document.getElementById("select-folder-scan-button")?.addEventListener("click", async function () {
+    const button = this;
+    const message = document.getElementById("folder-scan-message");
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    button.disabled = true;
+    message.textContent = "Checking connected devices...";
+
+    try {
+        if (!csrfToken) {
+            throw new Error("CSRF token missing. Refresh the dashboard.");
+        }
+
+        // Fetch devices belonging to the logged-in user.
+        const response = await fetch("/api/my-devices", {
+    credentials: "same-origin",
+    headers: { "Accept": "application/json" }
+});
+
+        if (!response.ok) {
+            throw new Error("Could not load connected devices.");
+        }
+
+        const data = await response.json();
+        const devices = Array.isArray(data) ? data : (data.devices || []);
+
+        if (!devices.length) {
+            throw new Error("No connected device found. Enroll your computer and run its RDRS agent first.");
+        }
+
+        const device = devices.find(d =>
+            d.status === "ONLINE" || d.status === "online" || d.is_online === true
+        ) || devices[0];
+
+        const deviceId = device.device_id || device.id;
+
+        if (!deviceId) {
+            throw new Error("Device ID missing. Refresh the dashboard and try again.");
+        }
+
+        message.textContent = "Sending folder selection request...";
+
+        const commandResponse = await fetch(
+            `/devices/${encodeURIComponent(deviceId)}/select-folder`,
+            {
+                method: "POST",
+                headers: { "X-CSRF-Token": csrfToken }
+            }
+        );
+
+        const result = await commandResponse.json();
+
+        if (!commandResponse.ok) {
+            throw new Error(result.detail || "Could not send folder selection request.");
+        }
+
+        message.textContent =
+            "Request sent. Keep the RDRS agent running on your computer and select a folder when prompted.";
+    } catch (error) {
+        message.textContent = error.message || "Folder selection request failed.";
+    } finally {
+        button.disabled = false;
     }
 });
 

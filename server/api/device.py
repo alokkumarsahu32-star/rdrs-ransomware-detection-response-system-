@@ -13,6 +13,7 @@ from app.database.database import (
     save_scan_finding_once,
     SessionLocal,
     Device,
+    DeviceCommand,
     ScanFileResult
 )
 
@@ -149,15 +150,20 @@ def device_heartbeat(
 # GET ALL DEVICES
 # ==================================================
 
+# ==================================================
+# GET ALL DEVICES
+# ==================================================
+
 @router.get("/")
 def get_devices():
-
     db = SessionLocal()
 
     try:
-
+        # Device API ko sirf linked devices return karne chahiye.
+        # User session ki jagah website se authenticated endpoint use hoga.
         devices = (
             db.query(Device)
+            .filter(Device.user_id.isnot(None))
             .order_by(Device.id.desc())
             .all()
         )
@@ -173,16 +179,14 @@ def get_devices():
                     "operating_system": device.operating_system,
                     "status": device.status,
                     "agent_version": device.agent_version,
-                    "last_seen": device.last_seen
+                    "last_seen": device.last_seen,
                 }
                 for device in devices
-            ]
+            ],
         }
 
     finally:
-
         db.close()
-
 # ==================================================
 # GET SINGLE DEVICE
 # ==================================================
@@ -367,6 +371,267 @@ def upload_scan_results(
               "suspicious_count": len(request.suspicious_files),
                "findings_processed": processed_count,
               "message": "Scan results processed"
+        }
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+from app.database.database import create_device_command
+
+
+@router.post("/{device_id}/commands")
+def create_command_for_device(
+    device_id: str,
+    command_type: str,
+    request_user_id: int,
+    authorization: str = Header(...),
+):
+    db = SessionLocal()
+    try:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authorization header",
+            )
+
+        token = authorization.replace("Bearer ", "", 1).strip()
+
+        device = (
+            db.query(Device)
+            .filter(
+                Device.device_id == device_id,
+                Device.user_id == request_user_id,
+                Device.device_token == token,
+            )
+            .first()
+        )
+
+        if not device:
+            raise HTTPException(
+                status_code=403,
+                detail="Device authorization failed",
+            )
+
+        allowed_commands = {"PAIR_DEVICE", "SELECT_FOLDER", "SCAN_FOLDER"}
+        if command_type not in allowed_commands:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported command",
+            )
+
+        command = create_device_command(
+            user_id=request_user_id,
+            device_id=device_id,
+            command_type=command_type,
+        )
+
+        if not command:
+            raise HTTPException(status_code=404, detail="Device not found")
+
+        return {
+            "status": "success",
+            "command_id": command.command_id,
+            "command_type": command.command_type,
+            "command_status": command.status,
+        }
+    finally:
+        db.close()
+
+@router.get("/commands/pending")
+def get_pending_commands(
+    device_id: str,
+    authorization: str = Header(...),
+):
+    db = SessionLocal()
+    try:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authorization header",
+            )
+
+        token = authorization.replace("Bearer ", "", 1).strip()
+
+        device = (
+            db.query(Device)
+            .filter(
+                Device.device_id == device_id,
+                Device.device_token == token,
+            )
+            .first()
+        )
+
+        if not device:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid device credentials",
+            )
+
+        commands = (
+            db.query(DeviceCommand)
+            .filter(
+                DeviceCommand.device_id == device_id,
+                DeviceCommand.user_id == device.user_id,
+                DeviceCommand.status == "PENDING",
+            )
+            .order_by(DeviceCommand.id.asc())
+            .limit(10)
+            .all()
+        )
+
+        return {
+            "status": "success",
+            "commands": [
+                {
+                    "command_id": command.command_id,
+                    "command_type": command.command_type,
+                    "status": command.status,
+                }
+                for command in commands
+            ],
+        }
+    finally:
+        db.close()
+
+@router.post("/commands/{command_id}/claim")
+def claim_command(
+    command_id: str,
+    device_id: str,
+    authorization: str = Header(...),
+):
+    db = SessionLocal()
+
+    try:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authorization header",
+            )
+
+        token = authorization.replace("Bearer ", "", 1).strip()
+
+        device = (
+            db.query(Device)
+            .filter(
+                Device.device_id == device_id,
+                Device.device_token == token,
+            )
+            .first()
+        )
+
+        if not device:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid device credentials",
+            )
+
+        command = (
+            db.query(DeviceCommand)
+            .filter(
+                DeviceCommand.command_id == command_id,
+                DeviceCommand.device_id == device_id,
+                DeviceCommand.user_id == device.user_id,
+                DeviceCommand.status == "PENDING",
+            )
+            .with_for_update()
+            .first()
+        )
+
+        if not command:
+            return {
+                "status": "not_claimed",
+                "message": "Command is unavailable or already claimed",
+            }
+
+        command.status = "PROCESSING"
+        db.commit()
+
+        return {
+            "status": "success",
+            "command_id": command.command_id,
+            "command_status": command.status,
+        }
+
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
+
+@router.post("/commands/{command_id}/result")
+def submit_command_result(
+    command_id: str,
+    status: str,
+    result_json: str = "",
+    authorization: str = Header(...),
+):
+    db = SessionLocal()
+
+    try:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authorization header",
+            )
+
+        token = authorization.replace("Bearer ", "", 1).strip()
+
+        device = (
+            db.query(Device)
+            .filter(Device.device_token == token)
+            .first()
+        )
+
+        if not device:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid device credentials",
+            )
+
+        if status not in {"COMPLETED", "FAILED"}:
+            raise HTTPException(
+                status_code=400,
+                detail="Status must be COMPLETED or FAILED",
+            )
+
+        command = (
+            db.query(DeviceCommand)
+            .filter(
+                DeviceCommand.command_id == command_id,
+                DeviceCommand.device_id == device.device_id,
+                DeviceCommand.user_id == device.user_id,
+            )
+            .first()
+        )
+
+        if not command:
+            raise HTTPException(
+                status_code=404,
+                detail="Command not found for this device",
+            )
+
+        if command.status not in {"PENDING", "PROCESSING"}:
+            raise HTTPException(
+                status_code=409,
+                detail="Command has already been processed",
+            )
+
+        command.status = status
+        command.result_json = result_json
+        command.completed_at = datetime.now()
+
+        db.commit()
+
+        return {
+            "status": "success",
+            "command_id": command.command_id,
+            "command_status": command.status,
+            "message": "Command result saved",
         }
 
     except Exception:

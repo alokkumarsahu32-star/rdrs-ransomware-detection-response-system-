@@ -152,7 +152,22 @@ def send_heartbeat(device_id, device_token):
         "| Last Seen:",
         data.get("last_seen")
     )
+# ==================================================
+# SERVER COMMAND POLLING
+# ==================================================
 
+def get_pending_commands(device_id, device_token):
+    response = requests.get(
+        f"{SERVER_URL}/api/devices/commands/pending",
+        params={"device_id": device_id},
+        headers={
+            "Authorization": f"Bearer {device_token}"
+        },
+        timeout=15,
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data.get("commands", [])
 
 # ==================================================
 # LOCAL FOLDER SCANNING AND RESULT UPLOAD
@@ -241,7 +256,95 @@ def upload_scan_results(device_id, device_token, scan_result):
     response.raise_for_status()
     return response.json()
 
+def claim_server_command(command_id, device_id, device_token):
+    response = requests.post(
+        f"{SERVER_URL}/api/devices/commands/{command_id}/claim",
+        params={"device_id": device_id},
+        headers={
+            "Authorization": f"Bearer {device_token}"
+        },
+        timeout=15,
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data.get("status") == "success"
 
+
+# ==================================================
+# PROCESS SERVER COMMANDS
+# ==================================================
+
+def process_server_commands(device_id, device_token):
+    commands = get_pending_commands(device_id, device_token)
+
+    for command in commands:
+        command_id = command.get("command_id")
+        command_type = command.get("command_type")
+
+        if not command_id:
+            continue
+
+        if not claim_server_command(command_id, device_id, device_token):
+            print("Command already claimed:", command_id)
+            continue
+
+        try:
+            if command_type == "SELECT_FOLDER":
+                selected_folder = select_folder()
+
+                if not selected_folder:
+                    result = {
+                        "message": "Folder selection cancelled"
+                    }
+                    status = "FAILED"
+                else:
+                    scan_result = scan_local_folder(selected_folder)
+                    upload_result = upload_scan_results(
+                        device_id,
+                        device_token,
+                        scan_result,
+                    )
+                    result = {
+                        "folder_path": selected_folder,
+                        "files_scanned": scan_result["files_scanned"],
+                        "suspicious_count": len(
+                            scan_result["suspicious_files"]
+                        ),
+                        "upload_result": upload_result,
+                    }
+                    status = "COMPLETED"
+
+            elif command_type == "PAIR_DEVICE":
+                result = {"message": "Device is already registered"}
+                status = "COMPLETED"
+
+            elif command_type == "SCAN_FOLDER":
+                result = {
+                    "message": "SCAN_FOLDER requires a folder path"
+                }
+                status = "FAILED"
+
+            else:
+                result = {"message": "Unsupported command"}
+                status = "FAILED"
+
+        except Exception as error:
+            result = {"error": str(error)}
+            status = "FAILED"
+
+        response = requests.post(
+            f"{SERVER_URL}/api/devices/commands/{command_id}/result",
+            params={
+                "status": status,
+                "result_json": json.dumps(result),
+            },
+            headers={
+                "Authorization": f"Bearer {device_token}"
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        print("Command:", command_id, "| Status:", status)
 # ==================================================
 # MAIN AGENT
 # ==================================================
@@ -323,7 +426,7 @@ if __name__ == "__main__":
     else:
         print("No folder selected. Scan skipped.")
 
-    print("\nStarting heartbeat...")
+    print("\nStarting heartbeat and command polling...")
 
     while True:
         try:
@@ -331,4 +434,11 @@ if __name__ == "__main__":
         except requests.RequestException as error:
             print("Heartbeat failed:", error)
 
-        time.sleep(30)
+        try:
+            process_server_commands(device_id, device_token)
+        except requests.RequestException as error:
+            print("Command polling failed:", error)
+        except Exception as error:
+            print("Command processing failed:", error)
+
+        time.sleep(10)

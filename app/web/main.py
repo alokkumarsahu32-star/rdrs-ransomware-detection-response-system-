@@ -24,6 +24,7 @@ from server.api.device import router as devices_router
 
 from app.database.database import (
     create_device_enrollment,
+    create_device_command,
     get_devices_by_user,
     get_total_events,
     get_total_scanned_files,
@@ -70,6 +71,33 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(devices_router)
+
+@app.get("/download/agent")
+def download_agent(request: Request):
+    if not is_logged_in(request):
+        return login_redirect()
+
+    project_root = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..")
+    )
+
+    installer_path = os.path.join(
+              project_root,
+    "installer",
+    "RDRS-Agent-Setup.exe",
+)
+
+    if not os.path.isfile(installer_path):
+        raise HTTPException(
+            status_code=404,
+            detail="RDRS Agent installer is not available."
+        )
+
+    return FileResponse(
+        path=installer_path,
+        filename="RDRS-Agent-Setup.exe",
+        media_type="application/octet-stream",
+    )
 
 @app.get("/healthz")
 def healthz():
@@ -198,6 +226,38 @@ def create_enrollment_code(request: Request):
         "message": "Use this code to enroll your RDRS agent."
     }
 
+@app.post("/devices/{device_id}/select-folder")
+def request_folder_selection(request: Request, device_id: str):
+    if not is_logged_in(request):
+        return login_redirect()
+
+    submitted_token = request.headers.get("X-CSRF-Token", "")
+    if not verify_csrf_token(request, submitted_token):
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid or missing CSRF token",
+        )
+
+    user_id = get_current_user_id(request)
+
+
+    command = create_device_command(
+        user_id=user_id,
+        device_id=device_id,
+        command_type="SELECT_FOLDER",
+    )
+
+    if not command:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found or not linked to your account",
+        )
+
+    return {
+        "status": "success",
+        "command_id": command.command_id,
+        "message": "Folder selection request queued for your device.",
+    }
 
 # ==================================================
 # LOGIN PAGE
@@ -363,7 +423,40 @@ def dashboard(request: Request):
         },
     )
 
+# ==================================================
+# CURRENT USER'S CONNECTED DEVICES
+# ==================================================
 
+@app.get("/api/my-devices")
+def get_my_devices(request: Request):
+    if not is_logged_in(request):
+        raise HTTPException(
+            status_code=401,
+            detail="Login required",
+        )
+
+    user_id = get_current_user_id(request)
+    devices = get_devices_by_user(user_id)
+
+    return {
+        "status": "success",
+        "devices": [
+            {
+                "id": device.id,
+                "device_id": device.device_id,
+                "device_name": device.device_name,
+                "operating_system": device.operating_system,
+                "status": device.status,
+                "agent_version": device.agent_version,
+                "last_seen": (
+                    device.last_seen.isoformat()
+                    if device.last_seen
+                    else None
+                ),
+            }
+            for device in devices
+        ],
+    }
 # ==================================================
 # QUARANTINE
 # ==================================================

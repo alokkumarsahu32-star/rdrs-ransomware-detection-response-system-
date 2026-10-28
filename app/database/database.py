@@ -4,6 +4,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Text,
     DateTime,
     Float,
     text
@@ -24,6 +25,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Text,
     DateTime,
     Float,
     text
@@ -271,6 +273,19 @@ class Device(Base):
     agent_version = Column(String, default="1.0.0")
     created_at = Column(DateTime, default=datetime.now)
     last_seen = Column(DateTime, nullable=True)
+
+class DeviceCommand(Base):
+    __tablename__ = "device_commands"
+
+    id = Column(Integer, primary_key=True, index=True)
+    command_id = Column(String, unique=True, nullable=False, index=True)
+    device_id = Column(String, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    command_type = Column(String, nullable=False)
+    status = Column(String, default="PENDING", nullable=False)
+    result_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
 
 class DeviceEnrollment(Base):
     __tablename__ = "device_enrollments"
@@ -1201,3 +1216,41 @@ def get_devices_by_user(user_id: int):
         )
     finally:
         db.close()
+
+import uuid
+
+def create_device_command(user_id: int, device_id: str, command_type: str):
+    allowed_commands = {"PAIR_DEVICE", "SELECT_FOLDER", "SCAN_FOLDER"}
+
+    if command_type not in allowed_commands:
+        raise ValueError("Unsupported device command")
+
+    db = SessionLocal()
+    try:
+        device = (
+            db.query(Device)
+            .filter(
+                Device.device_id == device_id,
+                Device.user_id == user_id,
+            )
+            .first()
+        )
+
+        if not device:
+            return None
+
+        command = DeviceCommand(
+            command_id=str(uuid.uuid4()),
+            device_id=device.device_id,
+            user_id=user_id,
+            command_type=command_type,
+            status="PENDING",
+            created_at=datetime.now(),
+        )
+        db.add(command)
+        db.commit()
+        db.refresh(command)
+        return command
+    finally:
+        db.close()
+
